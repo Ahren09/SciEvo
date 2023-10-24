@@ -1,0 +1,68 @@
+# IDE and editor files
+.ipynb_checkpoints
+.idea/
+/src/.idea/
+
+# Output and data files
+./Data
+.nfs*
+/outputs/
+/data/
+/demo/
+/models/
+/runs/
+Link_classification/log/
+Link_classification/temp
+log/
+logs/
+outputs/models
+scratch.py
+TrainingLog.md
+
+# Compressed and archived files
+*.gz
+*.gzip
+*.tgz
+*.bin
+
+# Compiled code and configuration files
+*.pkl
+*.pyc
+
+# Text files
+*.log
+*.txt
+*.html
+*.pdf
+*.tsv
+*.xlsx
+*.csv
+*.jsonl
+*.json
+*.zst
+
+# Mac OS X files
+.DS_Store
+
+# Image files
+*.png
+
+# Machine learning and data analysis files
+*.pt
+*.gephi
+*.gexf
+
+# Pushshift dataset files
+/src/dataset/pushshift/processed/
+/src/dataset/pushshift/extract/
+/src/dataset/pushshift/logs/
+
+# Python compiled files and cache
+pycache/
+*/pycache/
+*.out
+*.npy
+*.graphml
+*.dtd
+*.ndjson
+*.model
