@@ -64,5 +64,7 @@ ARXIV_SUBJECTS = {
     "q-bio": ARXIV_CATEGORIES_QBIO,
     "q-fin": ARXIV_CATEGORIES_QFIN,
     "stat": ARXIV_CATEGORIES_STAT,
-
 }
+
+ARXIV_SUBJECTS_LIST = [tag for name, cat in ARXIV_SUBJECTS.items() for tag in cat]
+
