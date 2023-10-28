@@ -10,6 +10,7 @@ import sys
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode
+from pyspark.sql.types import StructField, TimestampType, StringType, StructType
 
 import const
 from utility.utils_data import load_data
@@ -35,14 +36,31 @@ def create_or_load_spark_dataframe(args):
         sdf = spark.read.parquet(osp.join(args.data_dir, "arXiv_spark_table.parquet"))
 
     else:
+
+        schema = StructType([
+            StructField("id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("summary", StringType(), True),
+            StructField("arxiv_comment", StringType(), True),
+            StructField("published", TimestampType(), True),  # Specify TimestampType for "published"
+            StructField("updated", TimestampType(), True),  # Specify TimestampType for "updated"
+            StructField("authors", StringType(), True),
+            StructField("tags", StringType(), True)
+        ])
+
         df = load_data(args)
 
+        """
+        Convert the tags field from a string to a list of tags:
+        df["tags"].apply(lambda x: x.strip(string.punctuation).split('\', \'') if isinstance(x, str) else x) 
+        """
+
         # "tags" is read as a string, so we convert it to a list
-        df["tags"] = df["tags"].apply(lambda x: x.strip(string.punctuation).split('\', \'')).apply(
+        df["tags"] = df["tags"].apply(
             lambda x: [tag for tag in x if tag in
                        const.ARXIV_SUBJECTS_LIST])
 
-        sdf = spark.createDataFrame(df)
+        sdf = spark.createDataFrame(df, schema=schema)
 
         # Explode the 'tags' list to create new rows for each tag
         sdf_exploded = sdf.withColumn("tag", explode(sdf.tags))
