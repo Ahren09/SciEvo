@@ -1,4 +1,6 @@
 import os.path as osp
+import time
+
 import pandas as pd
 
 
@@ -14,6 +16,7 @@ def load_data(args, subset: str = None):
         data (pd.DataFrame): DataFrame containing the arXiv metadata.
     """
 
+    t0 = time.time()
     if subset is None:
         data = pd.read_pickle(osp.join(args.data_dir, "arXiv_metadata.pkl"))
     else:
@@ -31,4 +34,5 @@ def load_data(args, subset: str = None):
 
         data = pd.read_excel(path)
 
+    print(f"Loaded {len(data)} entries in {(time.time() - t0):.3f} secs.")
     return data

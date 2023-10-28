@@ -1,34 +1,48 @@
 import os
-from pdf2image import convert_from_path
-from PyPDF2 import PdfFileReader
-
-# Define the arXiv paper URL
-paper_url = "https://arxiv.org/pdf/2305.19523.pdf"
-paper_id = paper_url.split("/")[-1].split(".")[0]
-
-# Set the directory to save the downloaded PDF and extracted content
-output_directory = "paper_extraction"
-
-# Create the output directory if it doesn't exist
-os.makedirs(output_directory, exist_ok=True)
+import os.path as osp
 
 
-pdf_filename = os.path.join(output_directory, f"{paper_id}.pdf")
-os.system(f"wget -O {pdf_filename} {paper_url}")
+# Define the URL to the abstract of the arXiv paper
 
-# Extract text from the PDF
-text_filename = os.path.join(output_directory, f"{paper_id}.txt")
-with open(text_filename, "w", encoding="utf-8") as text_file:
-    pdf = PdfFileReader(open(pdf_filename, "rb"))
-    for page_num in range(pdf.getNumPages()):
-        page = pdf.getPage(page_num)
-        text_file.write(page.extractText())
+def download_arXiv_paper_pdf(paper_id):
+    """
+    Downloads a PDF file of an arXiv paper given its unique paper ID.
 
-# Extract images from the PDF
-images = convert_from_path(pdf_filename, output_folder=output_directory)
+    Args:
+        paper_id (str): The unique identifier of the arXiv paper.
 
-# Save images as separate files
-for i, image in enumerate(images):
-    image.save(os.path.join(output_directory, f"page_{i + 1}.png"), "PNG")
+    Returns:
+        None
 
-print(f"PDF and content extraction completed. PDF saved as {pdf_filename}")
+    This function fetches the PDF file of the arXiv paper with the specified ID
+    and saves it to the 'data/pdf' directory.
+
+    Example:
+        >>> download_arXiv_paper_pdf("2310.13132")
+    """
+    paper_url = f"https://arxiv.org/pdf/{paper_id}.pdf"
+
+    paper_id = paper_url.split("/")[-1].split(".pdf")[0]
+
+    # Set the directory to save the downloaded PDF and extracted content
+    output_dir = osp.join("data", "pdf")
+
+    # Create the output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    pdf_filename = os.path.join(output_dir, f"{paper_id}.pdf")
+
+    command = f"wget -O --user-agent='Mozilla/5.0' {pdf_filename} {paper_url}"
+
+    print(command)
+
+    os.system(command)
+
+
+if __name__ == "__main__":
+    # Example usage
+    paper_abs_url = "https://arxiv.org/abs/2310.13132"
+    paper_id = paper_abs_url.split("/abs/")[-1].split("/")[0]
+    print(f"ID: {paper_id}")
+
+    download_arXiv_paper_pdf(paper_id)

@@ -21,7 +21,7 @@ from tqdm import tqdm
 sys.path.insert(0, osp.join(os.getcwd(), "src"))
 
 import const
-from arguments import args
+from arguments import parse_args
 from utility.utils_misc import project_setup
 
 # Suppress FutureWarning
@@ -124,6 +124,7 @@ def extract_keywords_for_row(tup):
 if __name__ == "__main__":
 
     project_setup()
+    args = parse_args()
 
     # Load Spacy model
     nlp = spacy.load("en_core_web_md")

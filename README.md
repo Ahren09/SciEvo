@@ -25,5 +25,10 @@ More information can be found in **[arXiv Submission Taxonomy](https://arxiv.org
 Download the data file `arXiv_metadata.pkl` and save it into the `data/` directory.
 
 
+## Download arXiv Papers
+
+To download the archive papers you can use `dataset/download_arxiv_paper.py`. Alternatively, archive provides bulk download using `s3cmd`. Refer to the [arXiv Bulk Data Access](https://info.arxiv.org/help/bulk_data.html) for more information.
+
+
 
 
