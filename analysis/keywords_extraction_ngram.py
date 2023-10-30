@@ -80,7 +80,7 @@ def get_vectorizer(args, data=None):
 
 
 def main():
-    df = load_data(args, subset="last_10000")
+    df = load_data(args)
     vectorizer = get_vectorizer(args, data=df)
 
     # Get feature names (i.e., the n-grams)

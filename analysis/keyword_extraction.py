@@ -18,7 +18,7 @@ from nltk.corpus import stopwords
 from rake_nltk import Rake
 from tqdm import tqdm
 
-sys.path.insert(0, osp.join(os.getcwd(), "src"))
+sys.path.insert(0, os.path.abspath('..'))
 
 import const
 from arguments import parse_args

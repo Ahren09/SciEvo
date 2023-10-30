@@ -15,8 +15,7 @@ from pyspark.sql.types import StructField, TimestampType, StringType, StructType
 import const
 from utility.utils_data import load_data
 
-sys.path.insert(0, osp.join(os.getcwd(), "src"))
-
+sys.path.insert(0, os.path.abspath('..'))
 from arguments import parse_args
 from utility.utils_misc import project_setup
 
