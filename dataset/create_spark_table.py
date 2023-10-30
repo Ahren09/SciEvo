@@ -32,6 +32,9 @@ def create_or_load_spark_dataframe(args):
         .appName("arXiv Metadata") \
         .getOrCreate()
 
+    print("spark.executor.memory", spark.conf.get("spark.executor.memory", "Not set"))
+    print("spark.driver.memory", spark.conf.get("spark.driver.memory", "Not set"))
+
     if osp.exists(path):
         sdf = spark.read.parquet(osp.join(args.data_dir, "arXiv_spark_table.parquet"))
 
@@ -52,7 +55,8 @@ def create_or_load_spark_dataframe(args):
 
         """
         Convert the tags field from a string to a list of tags:
-        df["tags"].apply(lambda x: x.strip(string.punctuation).split('\', \'') if isinstance(x, str) else x) 
+        df["tags"] = df["tags"].apply(lambda x: x.strip(string.punctuation).split('\', \'') if isinstance(x, 
+        str) else x) 
         """
 
         # "tags" is read as a string, so we convert it to a list

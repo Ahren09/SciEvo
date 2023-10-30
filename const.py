@@ -56,14 +56,16 @@ ARXIV_CATEGORIES_STAT = ['stat.AP', 'stat.CO', 'stat.ME', 'stat.ML', 'stat.OT',
                          'stat.TH']
 
 ARXIV_SUBJECTS = {
-    "cs": ARXIV_CATEGORIES_CS,
     "econ": ARXIV_CATEGORIES_ECON,
-    "eess": ARXIV_CATEGORIES_EESS,
-    "math": ARXIV_CATEGORIES_MATH,
-    "physics": ARXIV_CATEGORIES_PHYSICS,
     "q-bio": ARXIV_CATEGORIES_QBIO,
     "q-fin": ARXIV_CATEGORIES_QFIN,
     "stat": ARXIV_CATEGORIES_STAT,
+    "eess": ARXIV_CATEGORIES_EESS,
+
+
+    "math": ARXIV_CATEGORIES_MATH,
+    "cs": ARXIV_CATEGORIES_CS,
+    "physics": ARXIV_CATEGORIES_PHYSICS,
 }
 
 ARXIV_SUBJECTS_LIST = [tag for name, cat in ARXIV_SUBJECTS.items() for tag in cat]

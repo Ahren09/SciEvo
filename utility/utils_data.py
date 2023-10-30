@@ -1,3 +1,4 @@
+import json
 import os.path as osp
 import time
 
@@ -36,3 +37,9 @@ def load_data(args, subset: str = None):
 
     print(f"Loaded {len(data)} entries in {(time.time() - t0):.3f} secs.")
     return data
+
+def load_tag2papers(args):
+    tag2papers = json.load(open(osp.join(args.data_dir, "tag2papers.json"), "r"))
+    return tag2papers
+
+

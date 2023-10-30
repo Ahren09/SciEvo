@@ -14,10 +14,12 @@ Within Computer Science, there are several subfields, each dedicated to specific
 More information can be found in **[arXiv Submission Taxonomy](https://arxiv.org/category_taxonomy)**.
 
 
-- `arXiv_metadata`: The full dataaset with 1.9 million entries
-- `arXiv_metadata_first_100_entries.xlsx`: contains the first 100 entries in `arXiv_metadata`
-- `arXiv_metadata_last_100_entries.xlsx`: contains the last 100 entries in `arXiv_metadata`
-- `arXiv_metadata_last_10000_entries.xlsx`: contains the last 10000 entries in `arXiv_metadata`
+- `arXiv_metadata.pkl`: The full dataaset with around 2 million entries. Note that the `tags` field in this dataframe contains tags of MSC Classes (e.g. `I.4.5`, `52B12`, `05A15`)
+  - To load this file, use `utility.utils_data.load_data(args)`
+  - Alternatively, you can directly use `pd.read_pickle('arXiv_metadata.pkl')`.
+
+- `arXiv_metadata_last_100_entries.xlsx`: contains the last 100 entries in `arXiv_metadata.pkl`
+- `arXiv_metadata_last_10000_entries.xlsx`: contains the last 10000 entries in `arXiv_metadata.pkl`
 
 
 ## Getting Started
