@@ -32,19 +32,19 @@ def main():
     tag2papers = {}
 
     # Create multiple smaller dictionaries to store intermediate results
-    dicts = [{} for _ in range(args.n_procs)]
+    dicts = [{} for _ in range(args.num_workers)]
 
     # Number of rows to process in each thread
-    step = len(df) // args.n_procs
+    step = len(df) // args.num_workers
 
     # List to store future results
     futures = []
 
     # Parallel processing
     with ThreadPoolExecutor() as executor:
-        for i in range(args.n_procs):
+        for i in range(args.num_workers):
             start_index = i * step
-            end_index = (i + 1) * step if i != (args.n_procs - 1) else len(df)
+            end_index = (i + 1) * step if i != (args.num_workers - 1) else len(df)
             futures.append(executor.submit(populate_tag2papers, i, start_index, end_index, dicts[i]))
 
     # Wait for all threads to complete and merge the dictionaries

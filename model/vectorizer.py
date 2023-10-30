@@ -4,7 +4,7 @@ import os.path as osp
 import pickle
 import time
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -33,13 +33,14 @@ def extract_ngrams_from_text(text, n, stop_set):
     return [" ".join(n_gram) for n_gram in n_grams if should_keep_ngram(" ".join(n_gram), stop_set)]
 
 
-def extract_ngrams_parallel(documents, n_range, stop_set, num_threads=4):
+def extract_ngrams_parallel(documents, n_range, stop_set, num_workers=4):
     """
     Parallelizes the extraction of n-grams from multiple documents.
     """
     n_grams_list = []
     for n in n_range:
-        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Use ProcessPoolExecutor instead of ThreadPoolExecutor for multi-processing
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
             n_grams_for_n = list(
                 executor.map(lambda doc: extract_ngrams_from_text(preprocess_text(doc), n, stop_set), documents))
         n_grams_list.append(n_grams_for_n)
@@ -130,9 +131,9 @@ class BaseVectorizer:
 
 
 class CustomCountVectorizer(BaseVectorizer):
-    def fit_transform(self, documents, n_range, stop_set, num_threads=4):
+    def fit_transform(self, documents, n_range, stop_set, num_workers=4):
         t0 = time.time()
-        self.n_grams_list = extract_ngrams_parallel(documents, n_range, stop_set, num_threads)
+        self.n_grams_list = extract_ngrams_parallel(documents, n_range, stop_set, num_workers)
         self.n_grams_list = filter_ngrams_by_min_df(self.n_grams_list, 5)
         self.build_dtm(self.n_grams_list)
         print(f"Fit and transform takes {time.time() - t0:.2f} secs")
@@ -140,9 +141,9 @@ class CustomCountVectorizer(BaseVectorizer):
 
 
 class CustomTfidfVectorizer(BaseVectorizer):
-    def fit_transform(self, documents, n_range, stop_set, num_threads=4):
+    def fit_transform(self, documents, n_range, stop_set, num_workers=4):
         t0 = time.time()
-        self.n_grams_list = extract_ngrams_parallel(documents, n_range, stop_set, num_threads)
+        self.n_grams_list = extract_ngrams_parallel(documents, n_range, stop_set, num_workers)
         self.n_grams_list = filter_ngrams_by_min_df(self.n_grams_list, 5)
         self.build_dtm(self.n_grams_list)
 

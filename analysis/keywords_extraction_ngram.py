@@ -37,7 +37,7 @@ def get_vectorizer(args, data=None):
 
         abstracts = [abs for abs in data['summary'].tolist() if isinstance(abs, str)]
 
-        if args.n_procs == 1:
+        if args.num_workers == 1:
             # Initialize a CountVectorizer/TfidfVectorizer with ngram_range=(1, 4)
 
             # vectorizer = CountVectorizer(ngram_range=(1, 4), min_df=5)
@@ -56,7 +56,7 @@ def get_vectorizer(args, data=None):
 
             from model.vectorizer import CustomTfidfVectorizer
             vectorizer = CustomTfidfVectorizer(args)
-            dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_threads=args.n_procs)
+            dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
             print("\nDTM from TF-IDF Vectorizer:")
             print(dtm.toarray())
 
@@ -66,7 +66,7 @@ def get_vectorizer(args, data=None):
 
             #
             # # Extract n-grams of length 1 to 4 in parallel
-            # n_grams_list = extract_ngrams_parallel(abstracts, range(1, 5), stopwords, num_threads=args.n_procs)
+            # n_grams_list = extract_ngrams_parallel(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
             #
             # # Filter n-grams by minimum document frequency
             # n_grams_list = filter_ngrams_by_min_df(n_grams_list, 5)
