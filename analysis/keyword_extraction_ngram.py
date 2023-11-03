@@ -1,14 +1,12 @@
 """
 Extract keywords from the titles / abstracts (summary) using n-gram.
 """
-import itertools
 import os
-import sys
 import os.path as osp
 import pickle
+import sys
 import time
 
-from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -44,6 +42,8 @@ def get_vectorizer(args, data=None):
             # Initialize a CountVectorizer/TfidfVectorizer with ngram_range=(1, 4)
 
             # vectorizer = CountVectorizer(ngram_range=(1, 4), min_df=5)
+
+            # NOTE: If we use ngram_range=(1, 4), it will be generating n-grams with length 1, 2, 3, 4
             vectorizer = TfidfVectorizer(ngram_range=(1, 4), min_df=5, stop_words='english')
 
             t0 = time.time()
@@ -54,16 +54,14 @@ def get_vectorizer(args, data=None):
             with open(path, 'wb') as f:
                 pickle.dump(vectorizer, f)
 
-
         else:
+            from model.vectorizer import CustomCountVectorizer
+            vectorizer = CustomCountVectorizer(n_range=range(1, 5), args=args)
+            vectorizer.load()
 
-            from model.vectorizer import CustomTfidfVectorizer
-            vectorizer = CustomTfidfVectorizer(args)
             dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
 
             vectorizer.save()
-
-
 
             #
             # # Extract n-grams of length 1 to 4 in parallel
@@ -75,22 +73,22 @@ def get_vectorizer(args, data=None):
             # # Build CountVectorizer-like matrix
             # dtm = build_count_vectorizer_matrix(n_grams_list)
 
-
-
     return vectorizer
 
 
 def main():
-    df = load_data(args)
+    df = load_data(args, subset="last_100" if args.debug else None)
     vectorizer = get_vectorizer(args, data=df)
 
     # Get feature names (i.e., the n-grams)
-    feature_names = vectorizer.get_feature_names_out()
+    # feature_names = vectorizer.get_feature_names_out()
 
 
 if __name__ == "__main__":
     project_setup()
     args = parse_args()
+    if args.debug:
+        print("=" * 10, "RUNNING DEBUG MODE", "=" * 10)
+
     stopwords = set(stopwords.words("english"))
     main()
-
