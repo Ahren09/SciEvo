@@ -57,21 +57,10 @@ def get_vectorizer(args, data=None):
         else:
             from model.vectorizer import CustomCountVectorizer
             vectorizer = CustomCountVectorizer(n_range=range(1, 5), args=args)
-            vectorizer.load()
 
             dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
 
             vectorizer.save()
-
-            #
-            # # Extract n-grams of length 1 to 4 in parallel
-            # n_grams_list = extract_ngrams_parallel(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
-            #
-            # # Filter n-grams by minimum document frequency
-            # n_grams_list = filter_ngrams_by_min_df(n_grams_list, 5)
-            #
-            # # Build CountVectorizer-like matrix
-            # dtm = build_count_vectorizer_matrix(n_grams_list)
 
     return vectorizer
 
