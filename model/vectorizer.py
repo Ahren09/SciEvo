@@ -1,13 +1,18 @@
 import itertools
 import os
+import sys
 import os.path as osp
 import pickle
 import time
+import numpy as np
 from collections import Counter
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from tqdm import tqdm
 
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfTransformer
+
+sys.path.insert(0, os.path.abspath('..'))
 
 
 def preprocess_text(text):
@@ -33,19 +38,26 @@ def extract_ngrams_from_text(text, n, stop_set):
     return [" ".join(n_gram) for n_gram in n_grams if should_keep_ngram(" ".join(n_gram), stop_set)]
 
 
-def extract_ngrams_parallel(documents, n_range, stop_set, num_workers=4):
+def extract_ngrams_parallel(documents, n_range, stop_set, num_threads=4):
     """
     Parallelizes the extraction of n-grams from multiple documents.
     """
     n_grams_list = []
+    
     for n in n_range:
-        # Use ProcessPoolExecutor instead of ThreadPoolExecutor for multi-processing
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
-            n_grams_for_n = list(
-                executor.map(lambda doc: extract_ngrams_from_text(preprocess_text(doc), n, stop_set), documents))
+        futures = []
+        
+        with ProcessPoolExecutor(max_workers=num_threads) as executor:
+            print(f"Extracting {n}-grams with {num_threads} workers...")
+            for doc in documents:
+                futures.append(executor.submit(extract_ngrams_from_text, preprocess_text(doc), n, stop_set))
+            
+            n_grams_for_n = []
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"Extracting {n}-grams"):
+                n_grams_for_n.append(future.result())
+        
         n_grams_list.append(n_grams_for_n)
-
-    # Combine the n-grams of different lengths for each document
+        
     combined_n_grams_list = [list(itertools.chain.from_iterable(doc_n_grams)) for doc_n_grams in zip(*n_grams_list)]
     return combined_n_grams_list
 
@@ -81,7 +93,7 @@ def build_count_vectorizer_matrix(n_grams_list):
             data.append(freq)
         indptr.append(len(indices))
 
-    return sp.csr_matrix((data, indices, indptr), shape=(num_docs, num_terms), dtype=int)
+    return sp.csr_matrix((data, indices, indptr), shape=(num_docs, num_terms), dtype=np.int32)
 
 
 class BaseVectorizer:

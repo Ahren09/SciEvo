@@ -3,6 +3,7 @@ Extract keywords from the titles / abstracts (summary) using n-gram.
 """
 import itertools
 import os
+import sys
 import os.path as osp
 import pickle
 import time
@@ -11,6 +12,8 @@ from nltk import WordNetLemmatizer
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 from arguments import parse_args
 from utility.utils_data import load_data
 from utility.utils_misc import project_setup
@@ -57,8 +60,6 @@ def get_vectorizer(args, data=None):
             from model.vectorizer import CustomTfidfVectorizer
             vectorizer = CustomTfidfVectorizer(args)
             dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
-            print("\nDTM from TF-IDF Vectorizer:")
-            print(dtm.toarray())
 
             vectorizer.save()
 
