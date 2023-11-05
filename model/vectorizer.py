@@ -63,7 +63,6 @@ def extract_ngrams_parallel(documents, n_range, stop_set, num_workers=4):
             for future in tqdm(as_completed(futures), total=len(futures), desc=f"Extracting {n}-grams"):
                 n_grams_for_n.append(future.result())
 
-        print(f"Extracted {len(n_grams_for_n)} {n}-grams for {len(documents)} documents")
         n_grams_d[n] = n_grams_for_n
 
 
@@ -80,6 +79,8 @@ def filter_ngrams_by_min_df(n_grams_d, n_range=range(1, 5), min_df=5):
     for n in n_range:
         global_counter = Counter(itertools.chain.from_iterable(n_grams_d[n]))
         filtered_n_grams_d[n] = [[n_gram for n_gram in doc if global_counter[n_gram] >= min_df] for doc in n_grams_d[n]]
+
+        print(f"#{n}grams {len(filtered_n_grams_d[n])}")
 
     return filtered_n_grams_d
 
@@ -113,6 +114,7 @@ class BaseVectorizer:
     def __init__(self, n_range, args):
         self.n_grams_d = {}
         self.dtm_d = {}
+        self.vocabulary_d = {}
         self.n_range = n_range
         self.args = args
 
@@ -140,6 +142,8 @@ class BaseVectorizer:
 
             self.dtm_d[n] = sp.csr_matrix((data, indices, indptr), shape=(num_docs, num_terms), dtype=int)
 
+            self.vocabulary_d[n] = vocabulary
+
     def save(self, path=None):
 
         path = osp.join(self.args.output_dir, self.__class__.__name__) if path is None else path
@@ -152,6 +156,9 @@ class BaseVectorizer:
             with open(osp.join(path, f"{n}gram_d.pkl"), 'wb') as f:
                 pickle.dump(self.n_grams_d[n], f)
 
+            with open(osp.join(path, f"{n}gram_vocab.pkl"), 'wb') as f:
+                pickle.dump(self.vocabulary_d[n], f)
+
         print("Done!")
 
     def load(self, path=None):
@@ -162,6 +169,9 @@ class BaseVectorizer:
             self.dtm_d[n] = sp.load_npz(osp.join(path, f'{n}gram_csr_matrix.npz'))
             with open(osp.join(path, f"{n}gram_d.pkl"), 'rb') as f:
                 self.n_grams_d[n] = pickle.load(f)
+
+            with open(osp.join(path, f"{n}gram_vocab.pkl"), 'rb') as f:
+                self.vocabulary_d[n] = pickle.load(f)
 
         print("Done!")
 

@@ -9,12 +9,13 @@ import pandas as pd
 from gensim.models import Word2Vec
 from nltk.corpus import stopwords
 
+from model.vectorizer import CustomCountVectorizer
 from utility.utils_data import load_data
 from utility.utils_misc import project_setup
 
 sys.path.append(osp.join(os.getcwd(), "src"))
 import const
-from arguments import args
+from arguments import parse_args
 
 # Ignore FutureWarnings
 pd.options.mode.chained_assignment = None
@@ -61,9 +62,11 @@ def main():
 
     df['published'] = pd.to_datetime(df['published'])
 
+    vectorizer = CustomCountVectorizer(n_range=range(1, 3), args=args)
+
+    vectorizer.load()
+
     for start_year in range(2023, 2024):
-
-
 
         for start_month in range(7, 11):
 
@@ -107,6 +110,8 @@ def main():
 
 if __name__ == "__main__":
     project_setup()
+
+    args = parse_args()
     model_path = osp.join("checkpoints", "word2vec")
     os.makedirs(model_path, exist_ok=True)
     main()
