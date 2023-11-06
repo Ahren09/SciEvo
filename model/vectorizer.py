@@ -1,5 +1,6 @@
 import itertools
 import os
+import string
 import sys
 import os.path as osp
 import pickle
@@ -34,6 +35,8 @@ def extract_ngrams_from_text(text, n, stop_set):
     Extracts n-grams from a single document.
     """
     tokens = text.split()
+    tokens = [t.strip(string.punctuation) for t in tokens]
+
     n_grams = zip(*[tokens[i:] for i in range(n)])
     return [" ".join(n_gram) for n_gram in n_grams if should_keep_ngram(" ".join(n_gram), stop_set)]
 
