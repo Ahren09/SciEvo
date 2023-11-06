@@ -27,7 +27,7 @@ PREPOSITIONS = ['aboard', 'about', 'above', 'across', 'after', 'against', 'along
                 'through', 'to', 'toward', 'towards', 'under', 'underneath', 'unlike', 'until', 'up', 'upon', 'versus',
                 'via', 'with', 'within', 'without']
 
-MEANINGLESS_NOUNS = ['algorithm', 'analysis', 'application', 'approach', 'experiment', 'framework', 'importance',
+MEANINGLESS_NOUNS = ['algorithm', 'analysis', 'application', 'approach', 'due', 'experiment', 'framework', 'importance',
                      'method', 'model', 'paper', 'performance', 'problem', 'research', 'result', 'study', 'task',
                      'technique']
 
@@ -39,13 +39,13 @@ MEANINGLESS_ADJECTIVES = ['able', 'bad', 'best', 'better', 'big', 'capable', 'di
                           'fundamental',
                           'good',
                           'great',
-                          'high', 'important', 'large', 'late', 'likely', 'long', 'main', 'major', 'many', 'more',
+                          'high', 'important', 'large', 'last', 'late', 'likely', 'long', 'main', 'major', 'many', 'more',
                           'new', 'next', 'novel', 'old', 'outstanding', 'other', 'poor', 'possible', 'previous',
                           'recent',
-                          'same',
+                          'same', 'several'
                           'short', 'significant', 'small', 'such', 'worst', 'young']
 
-MEANINGLESS_VERBS = ['be', 'become', 'begin', 'bring', 'build', 'buy', 'call', 'can', 'come', 'could', 'demonstrate',
+MEANINGLESS_VERBS = ['achieve', 'be', 'become', 'begin', 'bring', 'build', 'buy', 'call', 'can', 'come', 'could', 'demonstrate',
                      'do', 'feel',
                      'find', 'get', 'give', 'go', 'have', 'hear', 'help', 'keep', 'know', 'leave', 'let', 'like',
                      'live', 'look', 'make', 'may', 'mean', 'might', 'move', 'need', 'play', 'put', 'run', 'say', 'see',
@@ -88,16 +88,23 @@ for verb in ALL_EXCLUDED_WORDS:
                     # Conjugate the verb based on the given tense, aspect, person, and number
                     # Skip the None aspect to avoid duplicates with simple tenses
                     if aspect:
-                        conjugated_verb = conjugate(verb, tense=tense, aspect=aspect, person=person, number=number,
-                                                    mood=INDICATIVE)
-                        if conjugated_verb:
-                            conjugations.add(conjugated_verb)
+                        try:
+                            conjugated_verb = conjugate(verb, tense=tense, aspect=aspect, person=person, number=number,
+                                                        mood=INDICATIVE)
+                            if conjugated_verb:
+                                conjugations.add(conjugated_verb)
+                        except:
+                            traceback.print_exc()
 
                     else:
-                        # Conjugate the base form
-                        conjugated_verb = conjugate(verb, tense=tense, person=person, number=number, mood=INDICATIVE)
-                        if conjugated_verb:
-                            conjugations.add(conjugated_verb)
+                        try:
+                            # Conjugate the base form
+                            conjugated_verb = conjugate(verb, tense=tense, person=person, number=number, mood=INDICATIVE)
+                            if conjugated_verb:
+                                conjugations.add(conjugated_verb)
+                        except:
+                            traceback.print_exc()    
+                        
 
 # Now add the participles (gerunds and past participles)
 for verb in ALL_EXCLUDED_WORDS:
