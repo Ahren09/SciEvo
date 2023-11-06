@@ -26,6 +26,21 @@ More information can be found in **[arXiv Submission Taxonomy](https://arxiv.org
 
 Download the data file `arXiv_metadata.pkl` and save it into the `data/` directory.
 
+Create a new environment
+
+
+```bash
+conda create -n arxiv python=3.9
+conda activate arxiv
+```
+
+Install the dependencies using pip
+
+```bash
+pip install pattern
+
+```
+
 
 ## Download arXiv Papers
 

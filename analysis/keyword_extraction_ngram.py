@@ -10,6 +10,8 @@ import time
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from model.vectorizer import CustomCountVectorizer
+
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 from arguments import parse_args
@@ -67,7 +69,15 @@ def get_vectorizer(args, data=None):
 
 def main():
     df = load_data(args, subset="last_100" if args.debug else None)
-    vectorizer = get_vectorizer(args, data=df)
+    # vectorizer = get_vectorizer(args, data=df)
+
+    vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
+    vectorizer.load()
+
+
+    print("Done!")
+
+
 
     # Get feature names (i.e., the n-grams)
     # feature_names = vectorizer.get_feature_names_out()

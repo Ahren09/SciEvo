@@ -168,13 +168,23 @@ class BaseVectorizer:
         path = osp.join(self.args.output_dir, self.__class__.__name__) if path is None else path
         print(f"Loading vectorizer from {path}...")
         for n in self.n_range:
-            print(f"Loading {n}-gram...")
+            print(f"({n}-gram) Loading CSR matrix...", end=' ', flush=True)
+            t0 = time.time()
             self.dtm_d[n] = sp.load_npz(osp.join(path, f'{n}gram_csr_matrix.npz'))
+            print(f"{time.time() - t0:.3f} secs")
+
+            t0 = time.time()
+            print(f"({n}-gram) Loading {n}gram dictionary...", end=' ', flush=True)
             with open(osp.join(path, f"{n}gram_d.pkl"), 'rb') as f:
                 self.n_grams_d[n] = pickle.load(f)
+            print(f"{time.time() - t0:.3f} secs")
 
+            t0 = time.time()
+            print(f"({n}-gram) Loading Vocab...", end=' ', flush=True)
             with open(osp.join(path, f"{n}gram_vocab.pkl"), 'rb') as f:
                 self.vocabulary_d[n] = pickle.load(f)
+
+            print(f"{time.time() - t0:.3f} secs")
 
         print("Done!")
 
