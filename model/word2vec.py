@@ -94,46 +94,43 @@ def update_vectorizer(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCo
 
     return updated_vectorizer
 
-# def update_vectorizer(vectorizer: CustomCountVectorizer, N: int  = 1) -> CustomCountVectorizer:
-#     updated_vocabulary = {}
-#     old_vocab = list(vectorizer.vocabulary_d[N].items())
-#
-#     retained_1gram_indices = []
-#
-#     def build_updated_vocabulary(old_vocab: list, retained_indices: list) -> dict:
-#         return {k: i for i, (k, v) in enumerate(old_vocab) if i in retained_indices}
-#
-#     for i, (k, v) in enumerate(tqdm(vectorizer.vocabulary_d[1].items())):
-#         if k not in set(ALL_EXCLUDED_WORDS):
-#             try:
-#                 # The word should NOT be convertible to numbers
-#                 int(k)
-#
-#             except:
-#                 # print(k)
-#                 retained_1gram_indices += [i]
-#
-#     for i in tqdm(retained_1gram_indices, "New Vocab"):
-#         k, v = old_vocab[i]
-#         updated_vocabulary[k] = len(updated_vocabulary)
-#
-#     words = set(updated_vocabulary.keys())
-#
-#     n_grams_d = {i: [] for i in range(1, 5)}
-#
-#     for example in tqdm(vectorizer.n_grams_d[N], desc="Generate ngrams"):
-#         ngrams = []
-#         for ngram in example:
-#             if ngram in words:
-#                 ngrams += [ngram]
-#         n_grams_d[N] += [ngrams]
-#
-#     updated_vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
-#     updated_vectorizer.dtm_d[N] = vectorizer.dtm_d[N][:, retained_1gram_indices]
-#     updated_vectorizer.vocabulary_d[N] = updated_vocabulary
-#     updated_vectorizer.n_grams_d[N] = n_grams_d[N]
-#
-#     return updated_vectorizer
+def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N: int  = 1) -> CustomCountVectorizer:
+    updated_vocabulary = {}
+    old_vocab = list(vectorizer.vocabulary_d[N].items())
+
+    retained_1gram_indices = []
+
+    for i, (k, v) in enumerate(tqdm(vectorizer.vocabulary_d[1].items())):
+        if k not in set(ALL_EXCLUDED_WORDS):
+            try:
+                # The word should NOT be convertible to numbers
+                int(k)
+
+            except:
+                # print(k)
+                retained_1gram_indices += [i]
+
+    for i in tqdm(retained_1gram_indices, "New Vocab"):
+        k, v = old_vocab[i]
+        updated_vocabulary[k] = len(updated_vocabulary)
+
+    words = set(updated_vocabulary.keys())
+
+    n_grams_d = {i: [] for i in range(1, 5)}
+
+    for example in tqdm(vectorizer.n_grams_d[N], desc="Generate ngrams"):
+        ngrams = []
+        for ngram in example:
+            if ngram in words:
+                ngrams += [ngram]
+        n_grams_d[N] += [ngrams]
+
+    updated_vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
+    updated_vectorizer.dtm_d[N] = vectorizer.dtm_d[N][:, retained_1gram_indices]
+    updated_vectorizer.vocabulary_d[N] = updated_vocabulary
+    updated_vectorizer.n_grams_d[N] = n_grams_d[N]
+
+    return updated_vectorizer
 
 
 def main():
