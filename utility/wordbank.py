@@ -4,7 +4,7 @@ from utility.wordbank import *
 from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from pattern.en import conjugate, lemma, PRESENT, PAST, FUTURE, INDICATIVE, PARTICIPLE, SG, PL
-
+import traceback
 import inflect
 
 PRONOUNS = ['he', 'her', 'hers', 'herself', 'him', 'himself', 'his', 'i', 'it', 'its', 'itself', 'me', 'mine', 'my',

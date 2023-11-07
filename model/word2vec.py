@@ -2,12 +2,16 @@ import os
 import os.path as osp
 import re
 import sys
+import datetime
 from pathlib import Path
+from typing import Set
 
 import nltk
 import pandas as pd
+import pytz
 from gensim.models import Word2Vec
 from nltk.corpus import stopwords
+from tqdm import tqdm
 
 from model.vectorizer import CustomCountVectorizer
 from utility.utils_data import load_data
@@ -15,6 +19,8 @@ from utility.utils_misc import project_setup
 
 sys.path.append(osp.join(os.getcwd(), "src"))
 import const
+from utility.wordbank import ALL_EXCLUDED_WORDS
+
 from arguments import parse_args
 
 # Ignore FutureWarnings
@@ -54,6 +60,82 @@ def process_documents(documents: list) -> list:
     stop_words = set(stopwords.words('english'))
     return tokenize_document(documents, stop_words)
 
+
+def build_retained_indices(vocabulary: dict, excluded_words: Set[str]) -> list:
+    return [
+        i for i, (word, _) in enumerate(vocabulary.items())
+        if word not in excluded_words and not word.isnumeric()
+    ]
+
+
+def build_updated_vocabulary(old_vocab: list, retained_indices: list) -> dict:
+    return {k: i for i, (k, v) in enumerate(old_vocab) if i in retained_indices}
+
+
+def update_ngrams(n_grams: list, words: set) -> list:
+    return [[ngram for ngram in example if ngram in words] for example in n_grams]
+
+
+def update_vectorizer(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCountVectorizer:
+    excluded_words = set(ALL_EXCLUDED_WORDS)
+    retained_indices = build_retained_indices(vectorizer.vocabulary_d[N], excluded_words)
+
+    updated_vocabulary = build_updated_vocabulary(
+        list(vectorizer.vocabulary_d[N].items()), retained_indices
+    )
+
+    updated_n_grams = update_ngrams(vectorizer.n_grams_d[N], set(updated_vocabulary.keys()))
+
+    # TODO
+    updated_vectorizer = CustomCountVectorizer(n_range=range(N, N + 1), args=args)
+    updated_vectorizer.dtm_d[N] = vectorizer.dtm_d[N][:, retained_indices]
+    updated_vectorizer.vocabulary_d[N] = updated_vocabulary
+    updated_vectorizer.n_grams_d[N] = updated_n_grams
+
+    return updated_vectorizer
+
+# def update_vectorizer(vectorizer: CustomCountVectorizer, N: int  = 1) -> CustomCountVectorizer:
+#     updated_vocabulary = {}
+#     old_vocab = list(vectorizer.vocabulary_d[N].items())
+#
+#     retained_1gram_indices = []
+#
+#     def build_updated_vocabulary(old_vocab: list, retained_indices: list) -> dict:
+#         return {k: i for i, (k, v) in enumerate(old_vocab) if i in retained_indices}
+#
+#     for i, (k, v) in enumerate(tqdm(vectorizer.vocabulary_d[1].items())):
+#         if k not in set(ALL_EXCLUDED_WORDS):
+#             try:
+#                 # The word should NOT be convertible to numbers
+#                 int(k)
+#
+#             except:
+#                 # print(k)
+#                 retained_1gram_indices += [i]
+#
+#     for i in tqdm(retained_1gram_indices, "New Vocab"):
+#         k, v = old_vocab[i]
+#         updated_vocabulary[k] = len(updated_vocabulary)
+#
+#     words = set(updated_vocabulary.keys())
+#
+#     n_grams_d = {i: [] for i in range(1, 5)}
+#
+#     for example in tqdm(vectorizer.n_grams_d[N], desc="Generate ngrams"):
+#         ngrams = []
+#         for ngram in example:
+#             if ngram in words:
+#                 ngrams += [ngram]
+#         n_grams_d[N] += [ngrams]
+#
+#     updated_vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
+#     updated_vectorizer.dtm_d[N] = vectorizer.dtm_d[N][:, retained_1gram_indices]
+#     updated_vectorizer.vocabulary_d[N] = updated_vocabulary
+#     updated_vectorizer.n_grams_d[N] = n_grams_d[N]
+#
+#     return updated_vectorizer
+
+
 def main():
 
     print("Loading data...", end='\r')
@@ -66,28 +148,50 @@ def main():
 
     vectorizer.load()
 
-    for start_year in range(2023, 2024):
+    data = load_data(args)
+    vectorizer = update_vectorizer(vectorizer, N=1)
+    data.sort_values('published', ascending=True, inplace=True)
 
-        for start_month in range(7, 11):
+    for start_year in range(1991, 2024):
 
-            if start_month == 12:
-                end_year = start_year + 1
-                end_month = 1
+        for start_month in range(1, 13):
+
+            # Treat all papers before 1990 as one single snapshot
+            if start_year < 1990:
+                start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+                end = datetime.datetime(1990, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+                break
+
+            elif start_year == 2023 and start_month == 11:
+                break
+
             else:
-                end_year = start_year
-                end_month = start_month + 1
+                if start_month == 12:
+                    # Turn to January next year
+                    end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            start_date = f"{start_year}-{start_month:02d}-01"
-            end_date = f"{end_year}-{end_month:02d}-01"
+                else:
+
+                    # Turn to the next month in the same year
+                    end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+                start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
 
-            mask = (df['published'] >= f"{start_date}") & (df['published'] < f"{end_date}")
-            df_snapshot = df[mask]
+
+            mask = (data['published'] >= start) & (data['published'] < end)
+            df_snapshot = data[mask]
+
+            print(f"Generating embeds from {start} to {end}: {len(df_snapshot)} documents")
+
 
             abstracts = df_snapshot['summary'].tolist()
             print(f"Generating embeds from {start_date} to {end_date}: {len(abstracts)} documents")
 
             tokenized_docs = process_documents(abstracts)
+
+
 
             try:
                 model = Word2Vec(sentences=tokenized_docs, vector_size=100, window=4, min_count=3,
@@ -98,7 +202,7 @@ def main():
 
 
             similar_words = model.wv.most_similar('computer', topn=20)
-            print(f"({start_year}-{end_year}) Words most similar to 'computer':")
+            print(f"({start}-{end}) Words most similar to 'computer':")
             for word, similarity in similar_words:
                 print(f"\t{word}: {similarity:.4f}")
 
