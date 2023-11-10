@@ -1,14 +1,15 @@
+import datetime
 import os
 import os.path as osp
 import re
 import sys
-import datetime
-from pathlib import Path
 from typing import Set
 
 import nltk
+import numpy as np
 import pandas as pd
 import pytz
+import scipy.sparse as sp
 from gensim.models import Word2Vec
 from nltk.corpus import stopwords
 from tqdm import tqdm
@@ -18,7 +19,6 @@ from utility.utils_data import load_data
 from utility.utils_misc import project_setup
 
 sys.path.append(osp.join(os.getcwd(), "src"))
-import const
 from utility.wordbank import ALL_EXCLUDED_WORDS
 
 from arguments import parse_args
@@ -46,6 +46,7 @@ def tokenize_document(documents: list, stop_words: set) -> list:
         filtered_tokens = [token for token in tokens if token not in stop_words]
         tokenized_docs.append(filtered_tokens)
     return tokenized_docs
+
 
 def process_documents(documents: list) -> list:
     """
@@ -78,7 +79,10 @@ def update_ngrams(n_grams: list, words: set) -> list:
 
 def update_vectorizer(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCountVectorizer:
     excluded_words = set(ALL_EXCLUDED_WORDS)
+    print(f"Excluded words: {excluded_words}")
     retained_indices = build_retained_indices(vectorizer.vocabulary_d[N], excluded_words)
+
+    print("Update vocabulary")
 
     updated_vocabulary = build_updated_vocabulary(
         list(vectorizer.vocabulary_d[N].items()), retained_indices
@@ -94,13 +98,14 @@ def update_vectorizer(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCo
 
     return updated_vectorizer
 
-def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N: int  = 1) -> CustomCountVectorizer:
+
+def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCountVectorizer:
     updated_vocabulary = {}
     old_vocab = list(vectorizer.vocabulary_d[N].items())
 
     retained_1gram_indices = []
 
-    for i, (k, v) in enumerate(tqdm(vectorizer.vocabulary_d[1].items())):
+    for i, (k, v) in enumerate(tqdm(vectorizer.vocabulary_d[N].items())):
         if k not in set(ALL_EXCLUDED_WORDS):
             try:
                 # The word should NOT be convertible to numbers
@@ -134,31 +139,40 @@ def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N:
 
 
 def main():
-
     print("Loading data...", end='\r')
     df = load_data(args, subset="last_10000")
     print("Done!")
 
     df['published'] = pd.to_datetime(df['published'])
 
-    vectorizer = CustomCountVectorizer(n_range=range(1, 3), args=args)
+    N = 1
+
+    vectorizer = CustomCountVectorizer(n_range=range(N, N + 1), args=args)
 
     vectorizer.load()
 
     data = load_data(args)
-    vectorizer = update_vectorizer(vectorizer, N=1)
+    mask_valid_abstract = np.array([True if isinstance(abs, str) else False for abs in data['summary']])
+    vectorizer = update_vectorizer_naive_implementation(vectorizer, N=N)
     data.sort_values('published', ascending=True, inplace=True)
+
+    total = 0
+    total_entries = 0
+    format_string = "%Y-%m-%d"
+
+    print(sum(mask_valid_abstract))
+
+    graphs_li = []
 
     for start_year in range(1991, 2024):
 
         for start_month in range(1, 13):
 
             # Treat all papers before 1990 as one single snapshot
-            if start_year < 1990:
+            if start_year < 1992:
                 start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-                end = datetime.datetime(1990, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-                break
+                end = datetime.datetime(1992, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
             elif start_year == 2023 and start_month == 11:
                 break
@@ -175,41 +189,69 @@ def main():
 
                 start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
+            mask_time = ((data['published'] >= start) & (data['published'] < end)).values
+
+            # mask: (1984440, )
+            mask = mask_time & mask_valid_abstract
+            total += mask.sum()
+            total_entries += 1
+            data_snapshot = data[mask]
+
+            # (N, V), N = number of documents, V = number of words
+            # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
+            coincidence_matrix = vectorizer.dtm_d[N][mask_time[mask_valid_abstract]]
+            print(
+                f"Generating embeds from {start.strftime(format_string)} to {end.strftime(format_string)}: {len(data_snapshot)} documents, total {total}, coincidence matrix {coincidence_matrix.shape}")
+
+            if DO_WORD2VEC:
+                abstracts = data_snapshot['summary'].tolist()
+
+                tokenized_docs = process_documents(abstracts)
+
+                try:
+                    model = Word2Vec(sentences=tokenized_docs, vector_size=100, window=4, min_count=3,
+                                     sg=1, negative=5, epochs=50, workers=15, seed=42)
+                except:
+                    model = Word2Vec(sentences=tokenized_docs, size=100, window=4,
+                                     min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
+
+                similar_words = model.wv.most_similar('computer', topn=20)
+                print(f"({start}-{end}) Words most similar to 'computer':")
+                for word, similarity in similar_words:
+                    print(f"\t{word}: {similarity:.4f}")
+
+                if args.save_model:
+                    filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+                    print(f"Saving model to {filename}")
+                    model.save(osp.join(model_path, filename))
 
 
-            mask = (data['published'] >= start) & (data['published'] < end)
-            df_snapshot = data[mask]
+            elif DO_GNN:
+                # V = number of words
 
-            print(f"Generating embeds from {start} to {end}: {len(df_snapshot)} documents")
+                # (V, V)
+                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
 
+                # Remove the diagonal entries (i.e., word co-occurrence with itself)
+                co_occurrence_matrix.setdiag(0)
 
-            abstracts = df_snapshot['summary'].tolist()
-            print(f"Generating embeds from {start_date} to {end_date}: {len(abstracts)} documents")
+                # Eliminate zero entries to maintain sparse structure
+                co_occurrence_matrix.eliminate_zeros()
 
-            tokenized_docs = process_documents(abstracts)
+                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(format_string)}_'
+                                     f'{end.strftime(format_string)}.npz'),
+                            co_occurrence_matrix)
 
+            if start_year < 1992:
+                break
 
+    print(f"Total entries: {total_entries}")
 
-            try:
-                model = Word2Vec(sentences=tokenized_docs, vector_size=100, window=4, min_count=3,
-                                 sg=1, negative=5, epochs=50, workers=15, seed=42)
-            except:
-                model = Word2Vec(sentences=tokenized_docs, size=100, window=4,
-                                 min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
-
-
-            similar_words = model.wv.most_similar('computer', topn=20)
-            print(f"({start}-{end}) Words most similar to 'computer':")
-            for word, similarity in similar_words:
-                print(f"\t{word}: {similarity:.4f}")
-
-
-            if args.save_model:
-                filename = f"word2vec_{start_date}-{end_date}.model"
-                print(f"Saving model to {filename}")
-                model.save(osp.join(model_path, filename))
 
 if __name__ == "__main__":
+    DO_WORD2VEC = False
+    DO_GNN = True
+
     project_setup()
 
     args = parse_args()
