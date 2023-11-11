@@ -1,29 +1,29 @@
 import datetime
+import gc
 import logging
 import os
+import os.path as osp
 
 import numpy as np
-import os.path as osp
 import pytz
 import torch
 import torch.nn.functional as F
+from scipy import sparse as sp
+from scipy.sparse import find
 from torch import nn
 from torch.optim.lr_scheduler import StepLR
 from torch_geometric_temporal import GConvGRU, temporal_signal_split
-from scipy import sparse as sp
-from scipy.sparse import find
 from tqdm import trange
 
 from arguments import parse_args
 from dataset.dynamic_graph_dataset import CustomizedDynamicGraphStaticSignal
 from utility.utils_logging import configure_default_logging
-
+from utility.utils_misc import set_seed
 
 # TODO: Add more models
 MODEL2CLASS = {
     "GConvGRU": GConvGRU,
 }
-
 
 
 class RecurrentGCN(nn.Module):
@@ -94,15 +94,31 @@ class RecurrentGCN(nn.Module):
                 nn.Linear(hidden_dim, hidden_dim),
             ).to(device)
 
+            nn.init.xavier_uniform_(self.mlp_input[0].weight)
+            nn.init.zeros_(self.mlp_input[0].bias)
+            nn.init.xavier_uniform_(self.mlp_input[3].weight)
+            nn.init.zeros_(self.mlp_input[3].bias)
+
+        if hasattr(self, 'lin_node'):
+            nn.init.xavier_uniform_(self.lin_node.weight)
+            nn.init.zeros_(self.lin_node.bias)
+
+        if hasattr(self, 'lin_edge'):
+            if isinstance(self.lin_edge, nn.Sequential):
+                for layer in self.lin_edge:
+                    if isinstance(layer, nn.Linear):
+                        nn.init.xavier_uniform_(layer.weight)
+                        nn.init.zeros_(layer.bias)
+            else:
+                nn.init.xavier_uniform_(self.lin_edge.weight)
+                nn.init.zeros_(self.lin_edge.bias)
+
         self.recurrent = MODEL2CLASS[model](hidden_dim, hidden_dim, 1).to(device)
 
-        # TODO
-        # if args.dataset_name == "Science2013Ant":
-        #     # For the Ants dataset, encode the node type as a categorical feature
-        #     self.embed_type = nn.Embedding(5, hidden_dim)
-        #     self.linear_emb = nn.Linear(hidden_dim * 2, hidden_dim)
-
         self.linear1 = nn.Linear(hidden_dim, hidden_dim)
+
+        nn.init.xavier_uniform_(self.linear1.weight)
+        nn.init.zeros_(self.linear1.bias)
 
         self.bceloss = nn.BCEWithLogitsLoss()
 
@@ -115,16 +131,7 @@ class RecurrentGCN(nn.Module):
     def get_embedding(self, x, edge_index, edge_weight, y):
         if self.transform_input:
             x = self.mlp_input(x)
-
         h_0 = self.recurrent(x, edge_index, edge_weight)
-
-        # h = torch.cat([h_0, self.embed_type(y.int())], dim=1)
-        # h = F.relu(self.linear_emb(h))
-        # h = F.dropout(h, p=0.1, training=self.training)
-        # h = self.linear1(h)
-        #
-        # return h
-
         return h_0
 
     def link_prediction(self, h, src, dst):
@@ -139,10 +146,8 @@ class RecurrentGCN(nn.Module):
         out = F.relu(h_0)
         out = F.dropout(out, p=0.1, training=self.training)
         h_1 = self.linear1(out)
-        out = F.relu(h_1)
-        out = F.dropout(out, p=0.1, training=self.training)
 
-        return out, h_1
+        return h_1
 
     def node_output_layer(self, out):
         score = self.lin_node(out)
@@ -173,75 +178,87 @@ class RecurrentGCN(nn.Module):
 
 
 def main():
-
+    set_seed(42)
 
     print("Constructing Dynamic Graph Model ...")
 
-    idx_snapshot = 0
-
     format_string = "%Y-%m-%d"
 
-    edge_li, edge_weights_li = [], []
+    if args.load_from_cache:
+        cache = torch.load(path_cache)
+        edge_li = cache["edge_index"]
+        edge_weights_li = cache["edge_weights"]
 
-    # Number of nodes
-    N = None
+    else:
 
+        idx_cache = 18
+        idx_snapshot = 373
 
-    for start_year in range(1991, 2024):
+        def save(edges, weights, idx_cache):
+            print(f"Saving cache {idx_cache} (#={len(edges)})...")
+            torch.save({
+                "edge_index": edges,
+                "edge_weights": weights,
+            }, f"outputs/cache_{args.model_name}_{idx_cache}.pt")
 
-        for start_month in range(1, 13):
+        edge_li, edge_weights_li = [], []
 
-            # TODO
-            if idx_snapshot >= 4:
-                break
+        # Number of nodes
+        N = None
 
-            # Treat all papers before 1990 as one single snapshot
-            if start_year < 1992:
-                start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+        for start_year in range(2023, 2024):
 
-                end = datetime.datetime(1992, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            for start_month in range(1, 13):
+                # Treat all papers before 1990 as one single snapshot
+                if start_year < 1992:
+                    start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            elif start_year == 2023 and start_month == 11:
-                break
+                    end = datetime.datetime(1992, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            else:
-                if start_month == 12:
-                    # Turn to January next year
-                    end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+                elif start_year == 2023 and start_month == 11:
+                    break
 
                 else:
+                    if start_month == 12:
+                        # Turn to January next year
+                        end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-                    # Turn to the next month in the same year
-                    end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+                    else:
 
-                start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+                        # Turn to the next month in the same year
+                        end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            idx_snapshot += 1
-            filename = (f"outputs/snapshots/graph_{idx_snapshot}_{start.strftime(format_string)}"
-                        f"_{end.strftime(format_string)}.npz")
+                    start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            graph = sp.load_npz(filename)
-            N = graph.shape[0]
-            row_indices, col_indices, edge_weights = find(graph)
+                idx_snapshot += 1
+                filename = (f"outputs/snapshots/graph_{idx_snapshot}_{start.strftime(format_string)}"
+                            f"_{end.strftime(format_string)}.npz")
 
-            assert edge_weights.max() == graph.max()
+                print(f"Processed {start.strftime(format_string)} to {end.strftime(format_string)}")
 
-            edge_weights = np.log2(edge_weights + 1)
+                graph = sp.load_npz(filename)
+                N = graph.shape[0]
+                row_indices, col_indices, edge_weights = find(graph)
 
-            edges = np.array(list(zip(row_indices, col_indices))).T
+                assert edge_weights.max() == graph.max()
 
-            edge_li += [edges]
-            edge_weights_li += [edge_weights]
+                edge_weights = np.log2(edge_weights + 1)
 
+                edges = np.array(list(zip(row_indices, col_indices))).T
 
-            # TODO
-            if idx_snapshot >= 4:
-                break
+                edge_li += [edges]
+                edge_weights_li += [edge_weights]
 
-            if start_year < 1992:
-                break
+                if start_year < 1992:
+                    break
 
+            if ((start_year + 1) % 1 == 0 and start_month == 12) or (start_year == 2023 and start_month == 10):
+                save(edge_li, edge_weights_li, idx_cache)
+                idx_cache += 1
+                del edge_li, edge_weights_li
+                edge_li, edge_weights_li = [], []
 
+                gc.collect()
 
     D = args.embedding_dim
     # Calculate the variance for Xavier initialization
@@ -254,7 +271,7 @@ def main():
                                                       features=features)
 
     train_dataset, test_dataset = train_dataset, test_dataset = temporal_signal_split(full_dataset,
-                                                        train_ratio=1.)
+                                                                                      train_ratio=1.)
 
     training_args = {
         "do_link_prediction": True,
@@ -294,7 +311,7 @@ def main():
                                                                     "node_mask") else snapshot.node_mask
 
             h_0 = model.get_embedding(snapshot.x, snapshot.edge_index,
-                                      snapshot.edge_attr, snapshot.y)
+                                      snapshot.edge_weights, snapshot.y)
 
             if training_args["do_link_prediction"]:
                 # Only pick negative nodes from the nodes that appear in the current graph
@@ -324,11 +341,11 @@ def main():
                 "do_edge_regression"] or training_args[
                 "do_node_classification"] or \
                     training_args["do_edge_classification"]:
-                out, h_1 = model.transform_output(h_0)
-                emb = h_1
+                emb = model.transform_output(h_0)
+                print((emb != 0).sum(), (emb == 0).sum())
 
             if training_args["do_node_regression"]:
-                pred_node = model.node_output_layer(out)
+                pred_node = model.node_output_layer(emb)
 
                 loss_node_regression = torch.mean(
                     (pred_node[node_mask] - snapshot.y[
@@ -340,12 +357,12 @@ def main():
 
             if training_args["do_edge_regression"]:
                 edge_features = torch.cat(
-                    [out[snapshot.edge_index[0]], out[snapshot.edge_index[1]]],
+                    [emb[snapshot.edge_index[0]], emb[snapshot.edge_index[1]]],
                     dim=1)
                 pred_edge = model.edge_output_layer(edge_features)
 
                 loss_edge_regression = torch.mean(
-                    (pred_edge.squeeze(1) - snapshot.edge_attr) ** 2)
+                    (pred_edge.squeeze(1) - snapshot.edge_weights) ** 2)
 
                 cost += loss_edge_regression * 0.1
 
@@ -390,16 +407,7 @@ def main():
                     embeds)
 
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
-
     args = parse_args()
     configure_default_logging()
     logger = logging.getLogger(__name__)

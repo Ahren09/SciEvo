@@ -25,6 +25,8 @@ def parse_args():
                                                                           "or intermediate results")
     parser.add_argument('--save_every', type=int, default=20, help="Step size for the scheduler")
     parser.add_argument('--save_model', action='store_true', help="Whether to save the trained model")
+    parser.add_argument('--load_from_cache', action='store_true', help="Whether to load the processed dataset from "
+                                                                       "cache. ")
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
     args = parser.parse_args()
