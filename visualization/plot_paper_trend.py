@@ -6,7 +6,7 @@ import seaborn as sns
 
 import const
 from arguments import parse_args
-from utility.utils_data import load_data, load_tag2papers
+from utility.utils_data import load_arXiv_data, load_tag2papers
 from utility.utils_misc import project_setup
 
 
@@ -49,7 +49,7 @@ def main():
                 print(f"[({category})\t{idx_subject}-th subject]\t{subject}\t{len(tag2papers[subject])} papers")
                 category2papers[category].update(set(tag2papers[subject]))
 
-        df = load_data(args)
+        df = load_arXiv_data(args.data_dir)
 
         monthly_count_li = []
 

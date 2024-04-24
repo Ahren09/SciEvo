@@ -13,7 +13,7 @@ from pyspark.sql.functions import explode
 from pyspark.sql.types import StructField, TimestampType, StringType, StructType
 
 import const
-from utility.utils_data import load_data
+from utility.utils_data import load_arXiv_data
 
 sys.path.insert(0, os.path.abspath('..'))
 from arguments import parse_args
@@ -50,7 +50,7 @@ def create_or_load_spark_dataframe(args):
             StructField("tags", StringType(), True)
         ])
 
-        df = load_data(args)
+        df = load_arXiv_data(args.data_dir)
 
         """
         Convert the tags field from a string to a list of tags:

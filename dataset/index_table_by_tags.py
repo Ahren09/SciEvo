@@ -5,7 +5,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import const
-from utility.utils_data import load_data
+from utility.utils_data import load_arXiv_data
 
 sys.path.insert(0, os.path.abspath('..'))
 from arguments import parse_args
@@ -13,7 +13,7 @@ from utility.utils_misc import project_setup
 
 
 def main():
-    df = load_data(args)
+    df = load_arXiv_data(args.data_dir)
 
     def populate_tag2papers(proc_id, start, end, local_dict):
         for i, row in df.iloc[start:end].iterrows():

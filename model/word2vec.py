@@ -15,7 +15,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 from model.vectorizer import CustomCountVectorizer
-from utility.utils_data import load_data
+from utility.utils_data import load_arXiv_data
 from utility.utils_misc import project_setup
 
 sys.path.append(osp.join(os.getcwd(), "src"))
@@ -140,7 +140,7 @@ def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N:
 
 def main():
     print("Loading data...", end='\r')
-    df = load_data(args, subset="last_10000")
+    df = load_arXiv_data(args, subset="last_10000")
     print("Done!")
 
     df['published'] = pd.to_datetime(df['published'])
@@ -151,7 +151,7 @@ def main():
 
     vectorizer.load()
 
-    data = load_data(args)
+    data = load_arXiv_data(args)
     mask_valid_abstract = np.array([True if isinstance(abs, str) else False for abs in data['summary']])
     vectorizer = update_vectorizer_naive_implementation(vectorizer, N=N)
     data.sort_values('published', ascending=True, inplace=True)

@@ -3,14 +3,14 @@ import os
 from sklearn.feature_extraction.text import CountVectorizer
 
 from arguments import parse_args
-from utility.utils_data import load_data
+from utility.utils_data import load_arXiv_data
 from utility.utils_misc import project_setup
 
 
 def main():
     # Initialize and train a CountVectorizer with some sample data
     vectorizer = CountVectorizer(ngram_range=(1, 4), min_df=5, stop_words='english')
-    df = load_data(args)
+    df = load_arXiv_data(args.data_dir)
 
     # New document
     new_doc = ["This is a new document that we want to check for specific keywords."]

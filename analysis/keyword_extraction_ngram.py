@@ -7,15 +7,16 @@ import pickle
 import sys
 import time
 
+import pandas as pd
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from model.vectorizer import CustomCountVectorizer
+from model.vectorizer import CustomCountVectorizer, CustomTfidfVectorizer
 
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('.'))
 from arguments import parse_args
-from utility.utils_data import load_data
+from utility.utils_data import load_arXiv_data
 from utility.utils_misc import project_setup
 
 
@@ -58,9 +59,9 @@ def get_vectorizer(args, data=None):
 
         else:
             from model.vectorizer import CustomCountVectorizer
-            vectorizer = CustomCountVectorizer(n_range=range(1, 5), args=args)
+            vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
 
-            dtm = vectorizer.fit_transform(abstracts, range(1, 5), stopwords, num_workers=args.num_workers)
+            dtm = vectorizer.fit_transform(abstracts, range(1, 2), stopwords, num_workers=args.num_workers)
 
             vectorizer.save()
 
@@ -68,10 +69,17 @@ def get_vectorizer(args, data=None):
 
 
 def main():
-    df = load_data(args, subset="last_100" if args.debug else None)
+    if args.debug:
+        df = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
+
+    else:
+
+        df = load_arXiv_data(args.data_dir, subset="last_100" if args.debug else None)
+
     # vectorizer = get_vectorizer(args, data=df)
 
-    vectorizer = CustomCountVectorizer(n_range=range(1, 2), args=args)
+    vectorizer = CustomTfidfVectorizer(n_range=range(1, 2), args=args)
+    dtm = vectorizer.fit_transform(df.summary.values, range(1, 2), stopwords, num_workers=args.num_workers)
     vectorizer.load()
 
 

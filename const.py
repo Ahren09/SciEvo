@@ -1,7 +1,9 @@
+
 ID = "id"
-
+TITLE = "title"
+SUMMARY = "summary"
 UPDATED = "updated"
-
+PUBLISHED = "published"
 
 ARXIV_CATEGORIES_CS = ['cs.AI', 'cs.AR', 'cs.CC', 'cs.CE', 'cs.CG', 'cs.CL',
                        'cs.CR', 'cs.CV', 'cs.CY', 'cs.DB', 'cs.DC', 'cs.DL',
@@ -62,11 +64,118 @@ ARXIV_SUBJECTS = {
     "stat": ARXIV_CATEGORIES_STAT,
     "eess": ARXIV_CATEGORIES_EESS,
 
-
     "math": ARXIV_CATEGORIES_MATH,
     "cs": ARXIV_CATEGORIES_CS,
     "physics": ARXIV_CATEGORIES_PHYSICS,
 }
 
 ARXIV_SUBJECTS_LIST = [tag for name, cat in ARXIV_SUBJECTS.items() for tag in cat]
+
+ACADEMIC_STOP_WORDS = ['1', '2', 'also', 'approach', 'data',
+                       'existing', 'feature', 'final', 'finally', 'find',
+                       'given',
+                       'method',
+                       'methods', 'model',
+                       'models',
+                       'new', 'novel',
+                       'paper',
+                       'performance', 'present', 'problem',
+                       'propose', 'proposed', 'prove', 'proved', 'provide', 'provides', 'recent', 'recently',
+                       'research',
+                       'results', 's',
+                       'several',
+                       'show',
+                       'shows',
+                       'shown',
+                       'showed',
+                       'state-of-the-art', 'study',
+                       'task', 'tasks', 'use',
+                       'used',
+                       'using', 'various', 'via', 'what', 'whose', 'when', 'with', 'without']
+
+ACADEMIC_STOP_WORDS += [str(i) for i in range(10)]
+all_chars = [chr(i) for i in range(65, 91)] + [chr(i) for i in range(97, 123)]
+ACADEMIC_STOP_WORDS += [c for c in all_chars]
+
+# Statistics of the number of papers on Semantic Scholar under each category
+# Source: https://arxiv.org/abs/2301.10140
+
+SEMANTIC_SCHOLAR_STATS = {
+    "n/a": 60.0e6,
+    "Medicine": 31.8e6,
+    "Biology": 20.4e6,
+    "Physics": 11.6e6,
+    "Engineering": 10.2e6,
+    "Computer Science": 9.7e6,
+    "Chemistry": 9.1e6,
+    "Education": 7.4e6,
+    "Materials Science": 7.4e6,
+    "Environmental Science": 7.0e6,
+    "Economics": 6.2e6,
+    "Psychology": 6.2e6,
+    "Agricultural and Food Sciences": 5.9e6,
+    "Business": 5.6e6,
+    "Mathematics": 3.7e6,
+    "History": 3.4e6,
+    "Political Science": 2.9e6,
+    "Art": 2.8e6,
+    "Geology": 2.6e6,
+    "Sociology": 1.4e6,
+    "Philosophy": 1.4e6,
+    "Law": 1.1e6,
+    "Linguistics": 1.1e6,
+    "Geography": 0.35e6
+}
+
+
+
+ARXIV_CATEGORY_KEYWORDS = {
+    'cs.AI': ['adversarial', 'algorithm', 'bayesian', 'classification',
+              'clustering',
+              'decision tree',
+              'deep learning', 'dimensionality', 'evolutionary',
+              'feature selection', 'gan',
+              'machine learning', 'model', 'naive bayes', 'neural',
+              'optimization', 'reduction', 'regression',
+              'reinforcement learning', 'rl', 'supervised',
+              'support vector machine', 'svm', 'unsupervised'],
+    'cs.CL': ['bert', 'chatgpt', 'classification', 'dialogue', 'extraction',
+              'generation', 'gpt',
+              'information', 'language', 'model', 'lemmatization',
+              'llm', 'named entity recognition', 'ner', 'nlp', 'parsing',
+              'pos tagging', 'regression',
+              'semantic', 'sentiment analysis', 'speech', 'stemming',
+              'summarization', 'syntactic parsing', 'text', 'text mining',
+              'tokenization', 'transformer', 'translation'],
+    'cs.CV': ['classification', 'cnn', 'convolutional neural network', 'cv',
+              'detection', 'face', 'feature', 'image',
+              'imagenet', 'object recognition', 'optical flow', 'rcnn',
+              'recognition',
+              'regression', 'resnet', 'resolution', 'representation', 'scene',
+              'segmentation', 'ssd',
+              'texture', 'video', 'vision', 'yolo'],
+    'cs.LG': ['active learning', 'backpropagation', 'bagging', 'boosting',
+              'cross validation', 'deep learning', 'descent', 'dropout',
+              'ensemble', 'feature', 'gradient',
+              'learning', 'loss', 'machine learning',
+              'model', 'neural network', 'offline', 'online',
+              'optimization', 'overfitting', 'regularization',
+              'reinforcement learning', 'representation',
+              'statistical learning', 'supervised',
+              'transfer learning', 'unsupervised'],
+    'cs.IR': ['behavior', 'click', 'clickthrough', "cf",
+              'collaborative',
+              'content', 'document', "factorization", 'filtering',
+              'frequency', 'hybrid',
+              'image', 'indexing', 'item', 'information', 'mf',
+              'model', 'pagerank', 'query',
+              'ranking',
+              'recommendation', 'recommender',
+              'relevance', 'representation', 'retrieval', 'search', 'text',
+              'term', 'user',
+              'vector', 'video', 'web']
+}
+
+
+
 
