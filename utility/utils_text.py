@@ -1,8 +1,12 @@
 import re
 
 from nltk import RegexpTokenizer
+from nltk.corpus import stopwords
 
-from analysis.keyword_extraction import stopwords_set
+english_stopwords = stopwords.words("english") + ['']
+
+    # Initialize Stopwords
+stopwords_set = set(stopwords.words('english'))
 
 
 def split_text_into_tokens(text):

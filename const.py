@@ -175,70 +175,104 @@ ARXIV_CATEGORY_KEYWORDS = {
 
 # Map the subject names to a list of keywords
 SUBJECT2KEYWORDS = {
-    "Medicine": ["Precision Medicine", "Immunotherapy",
-                 ("Digital Health Technologies", "Telehealth", "Telemedicine", "Wearable Devices", "Healthcare "
-                                                                                                   "Analytics"),
-                 ("COVID-19", "COVID", "Coronavirus", "Pandemic", "Post-Acute Sequelae"),
-                 ("Microbiome Therapeutics", "Gut-Brain Axis", "Probiotics", "Microbial Ecology"),
-                 ("CAR", "T-cell Therapy", "Immunotherapy", "Lymphoma Treatment", "Biotechnology"),
-                 ("Neurodegenerative Diseases", "Alzheimer", "Parkinson", "Tauopathy"),
-                 ],
-    "Biology": [("CRISPR", "CRISPR-Cas9", "Gene Editing"),
-                ("Synthetic Genomes", "Artificial Life", "Genetic Synthesis", "Bioengineering"),
-                ("Environmental DNA", "Biodiversity Monitoring", "Ecological Surveying", "Conservation Genetics"),
-                ("Bioinformatics in Species Classification", "Phylogenetics", "Genomic Sequencing", "Taxonomy"),
-                ("Neural Circuits in Behavior", "Neuroscience", "Brain Function Mapping", "Cognitive Science")
+    "Medicine": [(
+        "Genomic Medicine",
+        "Personalized",
+        "Pharmacogenomics",
+        "Biomarker Discovery",
+        "Targeted",
+        "Individualized",
+        "Predictive",
+        "Precision"
+    ),
 
+        ("Immunotherapy",
+         "Cancer",
+         "Checkpoint",
+         "CAR", "T-cell",
+         "Immune", "Modulators",
+         "Monoclonal Antibodies",
+         "Vaccine Therapy",
+         "Blockade",
+         "Adoptive Cell Transfer",
+         "Immune",
+         "Cytokine"
+         ),
+        ("Digital Health", "Telehealth", "Telemedicine", "Wearable Devices", "Healthcare "
+                                                                             "Analytics"),
+        ("COVID-19", "SARS-CoV-2", "COVID", "Coronavirus", "Pandemic", "Post-Acute Sequelae"),
+        ("Microbiome Therapeutics", "Gut-Brain Axis", "Probiotics", "Microbial Ecology"),
+        ("CAR", "T-cell Therapy", "Immunotherapy", "Adoptive Cell Transfer", "Lymphoma Treatment", "Biotechnology"),
+        ("Neurodegenerative Diseases", "Alzheimer", "Parkinson", "Tauopathy", "Tauopathies"),
+    ],
+    "Biology": [("CRISPR", "CRISPR-Cas9", "Gene Editing", "Genome Engineering", "Gene Therapy", "Molecular Cloning"),
+                ("Synthetic Biology", "Synthetic Genomes", "Artificial Life", "Genetic Synthesis", "Bioengineering"),
+                ("Environmental DNA", "Biodiversity", "Ecological Surveying", "Conservation Genetics"),
+                ("Bioinformatics", "Phylogenetics", "Genomic Sequencing", "Taxonomy"),
+                ("Neural Circuits", "Neuroscience", "Neurobiology", "Brain Function", "Cognitive")
                 ],
     "Physics": [
         ("Quantum Computing", "Quantum Mechanics", "Quantum Field", "Quantum Algorithms", "Quantum Cryptography"),
         ("Dark Energy", "Dark Matter",),
-        ("Neutrino Oscillations", "Particle Physics", "Standard Model", "Physics Beyond the Standard Model"),
-        ("Graphene Electronics", "Material Science", "Nanotechnology", "Semiconductors"),
-        ("Topological Insulators", "Quantum Physics", "Material Properties", "Electronic Band Structure"),
+        ("Neutrino", "Particle Physics", "Standard Model"),
+        ("Graphene", "Material Science", "Nanotechnology", "Semiconductors"),
+        ("Topological Insulators", "Quantum Physics", "Material Properties", "Electronic Band"),
         ("LIGO", "Gravitational Waves", "Astrophysics", "Cosmology")
-        ],
+    ],
 
     "Engineering": [
-        ("Perovskite Solar Cells", "Photovoltaics", "Solar Energy", "Nanomaterials"),
-        ("Internet of Things Security", "IoT" "Cybersecurity", "Network Security", "Smart Devices"),
-        ("5G Technology", "Wireless Networks", "Mobile Communications", "Network Infrastructure"),
-        ("Biomimetic Materials", "Bio-inspired Design", "Material Science", "Sustainable Technology"),
-        ("Additive Manufacturing Technologies", "3D Printing", "Rapid Prototyping", "Industrial Manufacturing")
+        ("Perovskite", "Solar Cells", "Photovoltaics", "Solar Energy", "Nanomaterials"),
+        ("Internet of Things", "IoT" "Cybersecurity", "Network Security", "Smart Devices"),
+        ("5G Technology", "Wireless", "Mobile", "Network Infrastructure"),
+        ("Biomimetic", "Biomimetics", "Bio-inspired Design", "Material Science", "Sustainable Technology"),
+        ("Additive Manufacturing", "3D Printing", "Rapid Prototyping", "Industrial Manufacturing")
     ],
 
     "Computer Science": [("Machine Learning", "Artificial Intelligence", "Deep Learning", "Neural Networks"),
                          ("Edge Computing", "Distributed Systems", "Cloud Computing", "IoT"),
-                         ("Natural Language Processing", "Machine Translation", "Text Analytics", "Speech Recognition"),
+                         ("Natural Language Processing", "Machine Translation", "Text", "Speech"),
                          (
                              "Quantum Algorithms", "Quantum Computing", "Computational Complexity",
                              "Quantum Cryptography"),
-                         ("Reinforcement Learning", "DPO", "PPO", "Decision Making"),
-                         "Computer Vision",
-                         ("Large Language Models", "LLM", "GPT", "ChatGPT", "GPT4", "GPT3", "GPT-4", "GPT-3", "RLHF"),
-                         ("Graph Neural Networks", "GNN", "Graph Mining", "GNNs")
+                         ("Reinforcement Learning", "DPO", "policy", "PPO", "Decision Making", "reinforce", "RLHF"),
+                         ("Computer Vision", "Multimodal", "Multimodality", "visual", "vision", "visualness",
+                          "perception"),
+                         ("Large Language Models", "LLM", "LLMs", "GPT", "ChatGPT", "GPT4", "GPT3", "GPT-4", "GPT-3",
+                          "RLHF"),
+                         ("Graph Neural Networks", "GNN", "Graph Mining", "GNNs", "Network Analysis"),
+                         ("Social Computing", "Computational Social Science", "Social Networks", "Social Media",
+                          "Twitter", "Reddit", "Social"),
                          ],
+
+    "Education": [
+        ("Blended Learning", "Hybrid Teaching", "Educational Technology", "Pedagogical", "Pedagogy", "E-Learning"),
+        ("Cognitive Strategies", "Metacognition", "Educational Psychology", "Learning Theories"),
+        ("Quantitative Research", "Educational Statistics", "Data Analysis", "Statistics"),
+        ("Data Mining", "Big Data", "Learning Analytics", "Adaptive Learning", "Statistics", "Data Analysis"),
+        ("Multicultural", "Multiculture", "Diversity", "Inclusive", "Inclusion", "Cross-cultural")
+    ],
 
     "Business": [
         ("Consumer Neuroscience", "Neuromarketing", "Decision Making", "Consumer Behavior"),
-        ("Sustainable Supply Chain Management", "Green Logistics", "Corporate Social Responsibility",
-         "Environmental Management"),
-        ("FinTech Innovations", "Blockchain", "Digital Payments", "RegTech"),
-        ("Behavioral Economics in Marketing", "Consumer Psychology", "Market Research", "Economic Behavior"),
-        ("Corporate Governance in Emerging Markets", "Business Ethics", "International Business", "Market Regulation")
+        ("Sustainable", "Sustainability", "Green Logistics", "Social Responsibility",
+         "Environmental Management", "Environmental Protection"),
+        ("FinTech", "Blockchain", "Digital Payments", "RegTech"),
+        ("Behavioral Economics", "Consumer Psychology", "Market Research", "Behavior", "Behavioral",
+         "Economic Decision-Making"),
+        ("Corporate Governance", "Emerging Markets", "International", "Global Market", "Market Regulation")
     ],
     "Mathematics": [
         ("Algebraic Geometry", "Complex Manifolds", "Commutative Algebra", "Number Theory"),
-        ("Optimization in Machine Learning", "Artificial Intelligence", "Statistics", "Algorithmic Efficiency"),
-        ("Nonlinear Partial Differential Equations", "Mathematical Modeling", "Chaos Theory", "Fluid Dynamics"),
-        ("Random Graphs", "Probability Theory", "Network Science", "Statistical Mechanics"),
-        ("Mathematical Biology", "Biostatistics", "Epidemiology", "Population Dynamics")
+        ("Optimization", "Optimize", "Statistical Learning", "Algorithmic Efficiency", "Computational Efficiency"),
+        ("PDE", "Differential Equations", "Mathematical Modeling", "Chaos Theory", "Fluid Dynamics"),
+        ("Random Graphs", "Graph", "Probability Theory", "Network Science", "Statistical Mechanics"),
+        ("Mathematical Biology", "Biostatistics", "Epidemiology", "Population")
     ],
     "History": [
-        ("Microhistory", "Narrative History", "Cultural History", "Social Structures"),
-        ("Transnational History of Migration", "Globalization", "Cultural Exchange", "Diaspora Studies"),
-        ("History of Pandemics", "Medical History", "Public Health", "Disease"),
-        ("Digital Archival", "Digital", "Historiography", "Digital Humanities", "Archival Science"),
-        ("Oral History and Memory", "Narrative Analysis", "Cultural Memory", "Historical Methodology")
+        ("Microhistory", "Narrative History", "Cultural History", "Social Structures", "Historiography"),
+        ("Transnational", "Migration", "Globalization", "Cultural Exchange", "Diaspora"),
+        ("Pandemics", "Epidemics", "Epidemiology", "Medical History", "Public Health", "Disease"),
+        ("Archive", "Archival", "Digital", "Historiography", "Digital Humanities", "Archival Science"),
+        ("Oral History", "Memory", "Narrative Analysis", "Cultural Memory", "Historical Methodology")
     ]
 }

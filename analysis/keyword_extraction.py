@@ -21,7 +21,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 from utility.utils_data import load_arXiv_data, get_titles_or_abstracts_as_list
-from utility.utils_text import split_text_into_tokens
+from utility.utils_text import split_text_into_tokens, stopwords_set, english_stopwords
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -184,6 +184,11 @@ def extract_unigrams_from_abstract(data):
 
 
 def extract_ngrams(features_list):
+    """
+    Extract unigrams, bigrams, and trigrams from the given list of features.
+
+    """
+
     # Tokenize and preprocess each abstract
     all_tokens = []
     unigrams = []
@@ -236,6 +241,8 @@ def extract_ngrams(features_list):
 
     trigrams = trigram_finder.nbest(TrigramAssocMeasures.likelihood_ratio, 50000)
 
+    assert len(trigrams) == len(filtered_trigrams)
+
     return unigrams, bigrams, trigrams
 
 
@@ -244,11 +251,6 @@ if __name__ == "__main__":
     project_setup()
     args = parse_args()
 
-
-    english_stopwords = stopwords.words("english") + ['']
-
-    # Initialize Stopwords
-    stopwords_set = set(stopwords.words('english'))
 
     if args.debug:
         data = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
@@ -259,7 +261,19 @@ if __name__ == "__main__":
     # all_abstract_words = extract_unigrams_from_abstract()
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)
 
-    keywords = extract_ngrams(get_titles_or_abstracts_as_list(data, "title"))
+    unigrams, bigrams, trigrams = extract_ngrams(get_titles_or_abstracts_as_list(data, "title"))
+
+    for subject in const.SUBJECT2KEYWORDS:
+        for related_keywords in const.SUBJECT2KEYWORDS[subject]:
+            for ngrams in [unigrams, bigrams, trigrams]:
+                for ngrams_one_example in ngrams:
+                    print(f"Subject {subject} found in {ngrams_one_example}")
+
+
+    # For each subject and each example, match the extracted keywords with the subject keywords
+
+
+
 
     if args.num_workers == 1:
         d_list = [extract_keywords_for_row((idx_row, row)) for idx_row, row in
