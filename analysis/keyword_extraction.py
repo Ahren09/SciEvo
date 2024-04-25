@@ -14,14 +14,14 @@ from multiprocessing import Pool
 
 import pandas as pd
 import spacy
-from nltk import BigramCollocationFinder, BigramAssocMeasures, TrigramCollocationFinder, TrigramAssocMeasures, \
-    RegexpTokenizer
+from nltk import BigramCollocationFinder, BigramAssocMeasures, TrigramCollocationFinder, TrigramAssocMeasures
 from nltk.corpus import stopwords
 from rake_nltk import Rake
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 from utility.utils_data import load_arXiv_data, get_titles_or_abstracts_as_list
+from utility.utils_text import split_text_into_tokens
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -32,6 +32,8 @@ from utility.utils_misc import project_setup
 # Suppress FutureWarning
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
+nlp = None  # Placeholder for Spacy model
 
 def custom_tokenizer(text):
     """
@@ -57,7 +59,13 @@ class CustomRake(Rake):
         self._regex_pattern = re.compile(r"[\w-]+")
 
 
-def extract_keywords(text):
+def extract_keywords_spacy(text):
+    global nlp
+
+    # Load Spacy model if not already loaded
+    if nlp is None:
+        nlp = spacy.load("en_core_web_md")
+
     """
     Extract keywords from a given text using NLP and other methods.
 
@@ -116,7 +124,7 @@ def extract_keywords_for_row(tup):
         "title": ["title_keywords", "title_unigrams"],
         "summary": ["abstract_keywords", "abstract_unigrams"]
     }.items():
-        keywords, unigrams = extract_keywords(row[col_name])
+        keywords, unigrams = extract_keywords_spacy(row[col_name])
 
         d[col_data[0]] = keywords
         d[col_data[1]] = unigrams
@@ -175,48 +183,15 @@ def extract_unigrams_from_abstract(data):
     return all_abstract_words
 
 
-def preprocess_text(text):
-    # Remove newlines and extra spaces
-    text = text.replace('\n', ' ').strip()
-    text = re.sub(' +', ' ', text)
-
-    # Lowercase and remove punctuation
-
-    tokenizer = RegexpTokenizer(r'[\$\[\]\{\}\w\\\-_]+')
-    tokens = tokenizer.tokenize(text.lower())
-    return tokens
-
-
-def extract_unigram_keywords(text):
-    """
-    Archived due to speed issues
-    Args:
-        text:
-
-    Returns:
-
-    """
-    keywords = []
-    for text_segment in text.split(":"):
-        doc = nlp(text_segment)
-        keywords += [chunk.text.strip(string.punctuation + " ") for chunk in doc.noun_chunks]
-
-    unigrams = [token.text.strip(string.punctuation + " ") for token in doc
-                if token.pos_ in ('VERB', 'NOUN', 'PROPN', 'ADJ')]
-
-    unigrams = list(set(unigrams) - stopwords_set)
-    return [w.lower() for w in unigrams if w != '']
-
-
 def extract_ngrams(features_list):
     # Tokenize and preprocess each abstract
     all_tokens = []
-    unigrams_all_examples = []
+    unigrams = []
 
     for i, entry in enumerate(tqdm(features_list, desc="Extract 1grams", total=len(features_list))):
-        tokens_one_example = preprocess_text(entry)
+        tokens_one_example = split_text_into_tokens(entry)
         all_tokens += [tokens_one_example]
-        unigrams_all_examples += [[token for token in tokens_one_example if token not in stopwords_set]]
+        unigrams += [[token for token in tokens_one_example if token not in stopwords_set]]
 
     # Extract unigrams
     count_unigrams = Counter([token for tokens_one_example in all_tokens for token in tokens_one_example])
@@ -269,8 +244,6 @@ if __name__ == "__main__":
     project_setup()
     args = parse_args()
 
-    # Load Spacy model
-    nlp = spacy.load("en_core_web_md")
 
     english_stopwords = stopwords.words("english") + ['']
 

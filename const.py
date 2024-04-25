@@ -1,4 +1,3 @@
-
 ID = "id"
 TITLE = "title"
 SUMMARY = "summary"
@@ -127,8 +126,6 @@ SEMANTIC_SCHOLAR_STATS = {
     "Geography": 0.35e6
 }
 
-
-
 ARXIV_CATEGORY_KEYWORDS = {
     'cs.AI': ['adversarial', 'algorithm', 'bayesian', 'classification',
               'clustering',
@@ -176,6 +173,72 @@ ARXIV_CATEGORY_KEYWORDS = {
               'vector', 'video', 'web']
 }
 
+# Map the subject names to a list of keywords
+SUBJECT2KEYWORDS = {
+    "Medicine": ["Precision Medicine", "Immunotherapy",
+                 ("Digital Health Technologies", "Telehealth", "Telemedicine", "Wearable Devices", "Healthcare "
+                                                                                                   "Analytics"),
+                 ("COVID-19", "COVID", "Coronavirus", "Pandemic", "Post-Acute Sequelae"),
+                 ("Microbiome Therapeutics", "Gut-Brain Axis", "Probiotics", "Microbial Ecology"),
+                 ("CAR", "T-cell Therapy", "Immunotherapy", "Lymphoma Treatment", "Biotechnology"),
+                 ("Neurodegenerative Diseases", "Alzheimer", "Parkinson", "Tauopathy"),
+                 ],
+    "Biology": [("CRISPR", "CRISPR-Cas9", "Gene Editing"),
+                ("Synthetic Genomes", "Artificial Life", "Genetic Synthesis", "Bioengineering"),
+                ("Environmental DNA", "Biodiversity Monitoring", "Ecological Surveying", "Conservation Genetics"),
+                ("Bioinformatics in Species Classification", "Phylogenetics", "Genomic Sequencing", "Taxonomy"),
+                ("Neural Circuits in Behavior", "Neuroscience", "Brain Function Mapping", "Cognitive Science")
 
+                ],
+    "Physics": [
+        ("Quantum Computing", "Quantum Mechanics", "Quantum Field", "Quantum Algorithms", "Quantum Cryptography"),
+        ("Dark Energy", "Dark Matter",),
+        ("Neutrino Oscillations", "Particle Physics", "Standard Model", "Physics Beyond the Standard Model"),
+        ("Graphene Electronics", "Material Science", "Nanotechnology", "Semiconductors"),
+        ("Topological Insulators", "Quantum Physics", "Material Properties", "Electronic Band Structure"),
+        ("LIGO", "Gravitational Waves", "Astrophysics", "Cosmology")
+        ],
 
+    "Engineering": [
+        ("Perovskite Solar Cells", "Photovoltaics", "Solar Energy", "Nanomaterials"),
+        ("Internet of Things Security", "IoT" "Cybersecurity", "Network Security", "Smart Devices"),
+        ("5G Technology", "Wireless Networks", "Mobile Communications", "Network Infrastructure"),
+        ("Biomimetic Materials", "Bio-inspired Design", "Material Science", "Sustainable Technology"),
+        ("Additive Manufacturing Technologies", "3D Printing", "Rapid Prototyping", "Industrial Manufacturing")
+    ],
 
+    "Computer Science": [("Machine Learning", "Artificial Intelligence", "Deep Learning", "Neural Networks"),
+                         ("Edge Computing", "Distributed Systems", "Cloud Computing", "IoT"),
+                         ("Natural Language Processing", "Machine Translation", "Text Analytics", "Speech Recognition"),
+                         (
+                             "Quantum Algorithms", "Quantum Computing", "Computational Complexity",
+                             "Quantum Cryptography"),
+                         ("Reinforcement Learning", "DPO", "PPO", "Decision Making"),
+                         "Computer Vision",
+                         ("Large Language Models", "LLM", "GPT", "ChatGPT", "GPT4", "GPT3", "GPT-4", "GPT-3", "RLHF"),
+                         ("Graph Neural Networks", "GNN", "Graph Mining", "GNNs")
+                         ],
+
+    "Business": [
+        ("Consumer Neuroscience", "Neuromarketing", "Decision Making", "Consumer Behavior"),
+        ("Sustainable Supply Chain Management", "Green Logistics", "Corporate Social Responsibility",
+         "Environmental Management"),
+        ("FinTech Innovations", "Blockchain", "Digital Payments", "RegTech"),
+        ("Behavioral Economics in Marketing", "Consumer Psychology", "Market Research", "Economic Behavior"),
+        ("Corporate Governance in Emerging Markets", "Business Ethics", "International Business", "Market Regulation")
+    ],
+    "Mathematics": [
+        ("Algebraic Geometry", "Complex Manifolds", "Commutative Algebra", "Number Theory"),
+        ("Optimization in Machine Learning", "Artificial Intelligence", "Statistics", "Algorithmic Efficiency"),
+        ("Nonlinear Partial Differential Equations", "Mathematical Modeling", "Chaos Theory", "Fluid Dynamics"),
+        ("Random Graphs", "Probability Theory", "Network Science", "Statistical Mechanics"),
+        ("Mathematical Biology", "Biostatistics", "Epidemiology", "Population Dynamics")
+    ],
+    "History": [
+        ("Microhistory", "Narrative History", "Cultural History", "Social Structures"),
+        ("Transnational History of Migration", "Globalization", "Cultural Exchange", "Diaspora Studies"),
+        ("History of Pandemics", "Medical History", "Public Health", "Disease"),
+        ("Digital Archival", "Digital", "Historiography", "Digital Humanities", "Archival Science"),
+        ("Oral History and Memory", "Narrative Analysis", "Cultural Memory", "Historical Methodology")
+    ]
+}
