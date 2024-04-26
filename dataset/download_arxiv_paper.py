@@ -168,7 +168,7 @@ def add_additional_arXiv_data_to_parquet(df):
     })
 
     df.drop_duplicates(subset=[const.ID], inplace=True)
-    df[const.UPDATED] = pd.to_datetime(df[const.UPDATED])
+    df[const.UPDATED] = pd.to_datetime(df[const.UPDATED], utc=True)
     df = df.sort_values(const.PUBLISHED, ascending=True)
 
     df.to_parquet(osp.join(args.data_dir, "NLP", "arXiv", "arXiv_metadata.parquet"))

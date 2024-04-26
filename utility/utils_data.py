@@ -1,15 +1,18 @@
+import datetime
 import json
 import os.path as osp
 import re
 import time
 
 import pandas as pd
+import pytz
 from tqdm import tqdm
 
 import const
 
 
-def load_arXiv_data(data_dir: str, subset: str = None):
+def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, start_month: int = None, end_year: int
+= None, end_month: int = None):
     """
     Load the arXiv metadata.
     Args:
@@ -24,6 +27,15 @@ def load_arXiv_data(data_dir: str, subset: str = None):
     if subset is None:
         # Load the full dataset
         data = pd.read_parquet(osp.join(data_dir, "NLP", "arXiv", "arXiv_metadata.parquet"))
+
+        data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True)
+
+        start_time = datetime.datetime(start_year, start_month, 1, tzinfo=pytz.utc)
+        end_time = datetime.datetime(end_year, end_month, 1, tzinfo=pytz.utc)
+
+        data = data[(data[const.PUBLISHED] >= start_time) & (data[const.PUBLISHED] < end_time)].reset_index(drop=True)
+
+
 
 
     else:

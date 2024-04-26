@@ -1,8 +1,12 @@
 ID = "id"
+PAPERID = "paperId"
 TITLE = "title"
 SUMMARY = "summary"
 UPDATED = "updated"
 PUBLISHED = "published"
+PUBLICATIONDATE = "publicationDate"
+SUBJECT = "subject"
+FOS = "fieldsOfStudy"
 
 ARXIV_CATEGORIES_CS = ['cs.AI', 'cs.AR', 'cs.CC', 'cs.CE', 'cs.CG', 'cs.CL',
                        'cs.CR', 'cs.CV', 'cs.CY', 'cs.DB', 'cs.DC', 'cs.DL',
@@ -127,7 +131,7 @@ SEMANTIC_SCHOLAR_STATS = {
 }
 
 ARXIV_CATEGORY_KEYWORDS = {
-    'cs.AI': ['adversarial', 'algorithm', 'bayesian', 'classification',
+    'cs.ai': ['adversarial', 'algorithm', 'bayesian', 'classification',
               'clustering',
               'decision tree',
               'deep learning', 'dimensionality', 'evolutionary',
@@ -136,7 +140,7 @@ ARXIV_CATEGORY_KEYWORDS = {
               'optimization', 'reduction', 'regression',
               'reinforcement learning', 'rl', 'supervised',
               'support vector machine', 'svm', 'unsupervised'],
-    'cs.CL': ['bert', 'chatgpt', 'classification', 'dialogue', 'extraction',
+    'cs.cl': ['bert', 'chatgpt', 'classification', 'dialogue', 'extraction',
               'generation', 'gpt',
               'information', 'language', 'model', 'lemmatization',
               'llm', 'named entity recognition', 'ner', 'nlp', 'parsing',
@@ -144,14 +148,14 @@ ARXIV_CATEGORY_KEYWORDS = {
               'semantic', 'sentiment analysis', 'speech', 'stemming',
               'summarization', 'syntactic parsing', 'text', 'text mining',
               'tokenization', 'transformer', 'translation'],
-    'cs.CV': ['classification', 'cnn', 'convolutional neural network', 'cv',
+    'cs.cv': ['classification', 'cnn', 'convolutional neural network', 'cv',
               'detection', 'face', 'feature', 'image',
               'imagenet', 'object recognition', 'optical flow', 'rcnn',
               'recognition',
               'regression', 'resnet', 'resolution', 'representation', 'scene',
               'segmentation', 'ssd',
               'texture', 'video', 'vision', 'yolo'],
-    'cs.LG': ['active learning', 'backpropagation', 'bagging', 'boosting',
+    'cs.lg': ['active learning', 'backpropagation', 'bagging', 'boosting',
               'cross validation', 'deep learning', 'descent', 'dropout',
               'ensemble', 'feature', 'gradient',
               'learning', 'loss', 'machine learning',
@@ -160,7 +164,7 @@ ARXIV_CATEGORY_KEYWORDS = {
               'reinforcement learning', 'representation',
               'statistical learning', 'supervised',
               'transfer learning', 'unsupervised'],
-    'cs.IR': ['behavior', 'click', 'clickthrough', "cf",
+    'cs.ir': ['behavior', 'click', 'clickthrough', "cf",
               'collaborative',
               'content', 'document', "factorization", 'filtering',
               'frequency', 'hybrid',
@@ -173,106 +177,137 @@ ARXIV_CATEGORY_KEYWORDS = {
               'vector', 'video', 'web']
 }
 
-# Map the subject names to a list of keywords
+# map the subject names to a list of keywords
 SUBJECT2KEYWORDS = {
     "Medicine": [(
-        "Genomic Medicine",
-        "Personalized",
-        "Pharmacogenomics",
-        "Biomarker Discovery",
-        "Targeted",
-        "Individualized",
-        "Predictive",
-        "Precision"
+        "precision medicine",
+        "precision",
+        "genomic medicine",
+        "personalized",
+        "pharmacogenomics",
+        "biomarker discovery",
+        "targeted",
+        "individualized",
+        "predictive",
     ),
-
-        ("Immunotherapy",
-         "Cancer",
-         "Checkpoint",
-         "CAR", "T-cell",
-         "Immune", "Modulators",
-         "Monoclonal Antibodies",
-         "Vaccine Therapy",
-         "Blockade",
-         "Adoptive Cell Transfer",
-         "Immune",
-         "Cytokine"
+        ("immunotherapy",
+         "cancer",
+         "checkpoint",
+         "car", "t-cell",
+         "immune", "modulators",
+         "monoclonal antibodies",
+         "vaccine therapy",
+         "blockade",
+         "adoptive cell transfer",
+         "cytokine"
          ),
-        ("Digital Health", "Telehealth", "Telemedicine", "Wearable Devices", "Healthcare "
-                                                                             "Analytics"),
-        ("COVID-19", "SARS-CoV-2", "COVID", "Coronavirus", "Pandemic", "Post-Acute Sequelae"),
-        ("Microbiome Therapeutics", "Gut-Brain Axis", "Probiotics", "Microbial Ecology"),
-        ("CAR", "T-cell Therapy", "Immunotherapy", "Adoptive Cell Transfer", "Lymphoma Treatment", "Biotechnology"),
-        ("Neurodegenerative Diseases", "Alzheimer", "Parkinson", "Tauopathy", "Tauopathies"),
+        ("digital health", "telehealth", "telemedicine", "wearable devices", "healthcare "
+                                                                             "analytics"),
+        ("covid", "covid-19", "sars-cov-2", "coronavirus", "pandemic", "post-acute sequelae"),
+        ("microbiome therapeutics", "gut-brain axis", "probiotics", "microbial ecology"),
+        ("car", "t-cell therapy", "immunotherapy", "adoptive cell transfer", "lymphoma treatment", "biotechnology"),
+        ("neurodegenerative", "alzheimer", "parkinson", "tauopathy", "tauopathies"),
     ],
-    "Biology": [("CRISPR", "CRISPR-Cas9", "Gene Editing", "Genome Engineering", "Gene Therapy", "Molecular Cloning"),
-                ("Synthetic Biology", "Synthetic Genomes", "Artificial Life", "Genetic Synthesis", "Bioengineering"),
-                ("Environmental DNA", "Biodiversity", "Ecological Surveying", "Conservation Genetics"),
-                ("Bioinformatics", "Phylogenetics", "Genomic Sequencing", "Taxonomy"),
-                ("Neural Circuits", "Neuroscience", "Neurobiology", "Brain Function", "Cognitive")
+    "Biology": [("genome engineering", "crispr", "crispr-cas9", "gene editing", "gene therapy", "molecular cloning"),
+                ("synthetic biology", "synthetic genomes", "artificial life", "genetic synthesis", "bioengineering"),
+                ("environmental dna", "biodiversity", "ecological surveying", "conservation genetics"),
+                ("bioinformatics", "phylogenetics", "genomic sequencing", "taxonomy"),
+                ("neuroscience", "neural circuits", "neurobiology", "brain function", "cognitive")
                 ],
     "Physics": [
-        ("Quantum Computing", "Quantum Mechanics", "Quantum Field", "Quantum Algorithms", "Quantum Cryptography"),
-        ("Dark Energy", "Dark Matter",),
-        ("Neutrino", "Particle Physics", "Standard Model"),
-        ("Graphene", "Material Science", "Nanotechnology", "Semiconductors"),
-        ("Topological Insulators", "Quantum Physics", "Material Properties", "Electronic Band"),
-        ("LIGO", "Gravitational Waves", "Astrophysics", "Cosmology")
+        ("quantum computing", "quantum", "quantum mechanics", "quantum field", "quantum algorithms",
+         "quantum cryptography"),
+        ("dark energy", "dark matter", "cosmology", "gravitational waves", "black holes"),
+        ("particle physics", "neutrino", "standard model"),
+        ("graphene", "material science", "nanotechnology", "semiconductors", "superconductors"),
+        ("topological insulators", "quantum physics", "material properties", "electronic band"),
+        ("ligo", "gravitational waves", "astrophysics", "cosmology")
     ],
 
     "Engineering": [
-        ("Perovskite", "Solar Cells", "Photovoltaics", "Solar Energy", "Nanomaterials"),
-        ("Internet of Things", "IoT" "Cybersecurity", "Network Security", "Smart Devices"),
-        ("5G Technology", "Wireless", "Mobile", "Network Infrastructure"),
-        ("Biomimetic", "Biomimetics", "Bio-inspired Design", "Material Science", "Sustainable Technology"),
-        ("Additive Manufacturing", "3D Printing", "Rapid Prototyping", "Industrial Manufacturing")
+        ("perovskite", "solar cells", "photovoltaics", "solar energy", "nanomaterials"),
+        ("internet of things", "iot" "cybersecurity", "network security", "smart devices"),
+        ("5g", "wireless", "mobile", "network infrastructure", "edge computing"),
+        ("biomimetic", "biomimetics", "bio-inspired design", "material science", "sustainable technology"),
+        ("additive manufacturing", "3d printing", "prototyping", "prototype", "industrial manufacturing")
     ],
 
-    "Computer Science": [("Machine Learning", "Artificial Intelligence", "Deep Learning", "Neural Networks"),
-                         ("Edge Computing", "Distributed Systems", "Cloud Computing", "IoT"),
-                         ("Natural Language Processing", "Machine Translation", "Text", "Speech"),
+    "Computer Science": [("machine learning", "artificial intelligence", "deep learning", "neural networks"),
+                         ("edge computing", "distributed systems", "cloud computing", "iot"),
+                         ("natural language processing", "machine translation", "text", "speech"),
                          (
-                             "Quantum Algorithms", "Quantum Computing", "Computational Complexity",
-                             "Quantum Cryptography"),
-                         ("Reinforcement Learning", "DPO", "policy", "PPO", "Decision Making", "reinforce", "RLHF"),
-                         ("Computer Vision", "Multimodal", "Multimodality", "visual", "vision", "visualness",
-                          "perception"),
-                         ("Large Language Models", "LLM", "LLMs", "GPT", "ChatGPT", "GPT4", "GPT3", "GPT-4", "GPT-3",
-                          "RLHF"),
-                         ("Graph Neural Networks", "GNN", "Graph Mining", "GNNs", "Network Analysis"),
-                         ("Social Computing", "Computational Social Science", "Social Networks", "Social Media",
-                          "Twitter", "Reddit", "Social"),
+                             "quantum algorithms", "quantum", "quantum computing", "computational complexity",
+                             "quantum cryptography"),
+                         ("bert", "roberta", "xlnet", "transformer", "transformers", "bidirectional", "attention",
+                          "self-attention",
+                          "llm"),
+                         ("reinforcement learning", "reinforcement", "dpo", "policy", "ppo", "decision making",
+                          "reinforce", "rl",
+                          "rlhf",
+                          "mdp", "markov"),
+                         ("hmm", "markov", "markov chain", "markov model", "markov decision", "markov process"),
+                         ("computer vision", "multimodal", "multimodality", "visual", "vision", "visualness",
+                          "perception", "yolo", "cnn", "cnns", "convolutional", "convolution", "object detection",
+                          "object recognition"),
+                         ("large language models", "llm", "llms", "gpt", "chatgpt", "gpt4", "gpt3", "gpt-4", "gpt-3",
+                          "rlhf"),
+                         ("graph neural networks", "gnn", "gcn", "gat", "graphsage", "graph mining", "gnns",
+                          "network analysis",
+                          "geometric"),
+                         ("social computing", "computational social science", "social networks", "social media",
+                          "twitter", "reddit", "social"),
+                         ("cybersecurity", "security", "privacy", "cryptography",),
+                         ("bias", "fairness", "ethics", "ethical", "fair", "bias", "equality", "fairness", "equity"),
+                         ("adversarial", "robustness", "defense", "adversarial training",),
+                         ("explainable", "interpretability", "interpretation", "explanation", "explainability", "xai"),
+                         ("multilingual", "cross-lingual", "translation", "mt"),
+                         ("named entity", "ner", "entity recognition", "srl", "tagging", "pos", "part-of-speech"),
+                         ("question answering", "qa", "question", "answering", "q&a"),
+                         ("cnn", "cnns", "convolutional", "convolution"),
+                         ("recommendation", "recommender", "matrix factorization", "mf", "cf", "collaborative "
+                                                                                               "filtering", "ncf",
+                          "ngcf", "lightgcn", "bpr", "two-tower")
                          ],
 
     "Education": [
-        ("Blended Learning", "Hybrid Teaching", "Educational Technology", "Pedagogical", "Pedagogy", "E-Learning"),
-        ("Cognitive Strategies", "Metacognition", "Educational Psychology", "Learning Theories"),
-        ("Quantitative Research", "Educational Statistics", "Data Analysis", "Statistics"),
-        ("Data Mining", "Big Data", "Learning Analytics", "Adaptive Learning", "Statistics", "Data Analysis"),
-        ("Multicultural", "Multiculture", "Diversity", "Inclusive", "Inclusion", "Cross-cultural")
+        ("hybrid teaching", "blended learning", "online", "educational technology", "pedagogical", "pedagogy",
+         "e-learning"),
+        ("cognitive strategies", "metacognition", "educational psychology", "learning theories"),
+        ("quantitative research", "educational statistics", "data analysis", "statistics"),
+        ("data mining", "big data", "learning analytics", "adaptive learning", "statistics", "data analysis"),
+        ("multicultural", "multiculture", "diversity", "inclusive", "inclusion", "cross-cultural")
     ],
 
     "Business": [
-        ("Consumer Neuroscience", "Neuromarketing", "Decision Making", "Consumer Behavior"),
-        ("Sustainable", "Sustainability", "Green Logistics", "Social Responsibility",
-         "Environmental Management", "Environmental Protection"),
-        ("FinTech", "Blockchain", "Digital Payments", "RegTech"),
-        ("Behavioral Economics", "Consumer Psychology", "Market Research", "Behavior", "Behavioral",
-         "Economic Decision-Making"),
-        ("Corporate Governance", "Emerging Markets", "International", "Global Market", "Market Regulation")
+        ("consumer neuroscience", "neuromarketing", "decision making", "consumer behavior"),
+        ("sustainable", "sustainability", "green logistics", "social responsibility",
+         "environmental management", "environmental protection"),
+        ("fintech", "blockchain", "digital payments", "regtech"),
+        ("behavioral economics", "consumer psychology", "market research", "behavior", "behavioral",
+         "economic decision-making"),
+        ("corporate governance", "emerging markets", "international", "global market", "market regulation")
     ],
     "Mathematics": [
-        ("Algebraic Geometry", "Complex Manifolds", "Commutative Algebra", "Number Theory"),
-        ("Optimization", "Optimize", "Statistical Learning", "Algorithmic Efficiency", "Computational Efficiency"),
-        ("PDE", "Differential Equations", "Mathematical Modeling", "Chaos Theory", "Fluid Dynamics"),
-        ("Random Graphs", "Graph", "Probability Theory", "Network Science", "Statistical Mechanics"),
-        ("Mathematical Biology", "Biostatistics", "Epidemiology", "Population")
+        ("algebraic geometry", "complex manifolds", "commutative algebra", "number theory"),
+        ("optimization", "optimize", "statistical learning", "algorithmic efficiency", "computational efficiency"),
+        ("pde", "differential equations", "mathematical modeling", "chaos theory", "fluid dynamics"),
+        ("random graphs", "graph", "graphs", "networks", "probability theory", "network science", "statistical "
+                                                                                                  "mechanics",),
+        ("probability", "stochastic", "random processes", "markov", "mcmc", "martingales"),
+        ("mathematical biology", "biostatistics", "epidemiology", "population")
     ],
     "History": [
-        ("Microhistory", "Narrative History", "Cultural History", "Social Structures", "Historiography"),
-        ("Transnational", "Migration", "Globalization", "Cultural Exchange", "Diaspora"),
-        ("Pandemics", "Epidemics", "Epidemiology", "Medical History", "Public Health", "Disease"),
-        ("Archive", "Archival", "Digital", "Historiography", "Digital Humanities", "Archival Science"),
-        ("Oral History", "Memory", "Narrative Analysis", "Cultural Memory", "Historical Methodology")
+        ("microhistory", "narrative history", "cultural history", "social structures", "historiography"),
+        ("transnational", "migration", "globalization", "cultural exchange", "diaspora"),
+        ("pandemics", "epidemics", "epidemiology", "medical history", "public health", "disease"),
+        ("archive", "archival", "digital", "historiography", "digital humanities", "archival science"),
+        ("oral history", "memory", "narrative analysis", "cultural memory", "historical methodology")
     ]
 }
+
+# Following the above function, we can create a dictionary that maps each keyword tuple to an ID
+KEYWORD2ID = {}
+for subject in SUBJECT2KEYWORDS:
+    for keywords_tuple in SUBJECT2KEYWORDS[subject]:
+        assert keywords_tuple[0] not in KEYWORD2ID
+        KEYWORD2ID[keywords_tuple[0]] = len(KEYWORD2ID)

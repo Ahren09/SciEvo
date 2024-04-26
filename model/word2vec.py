@@ -143,7 +143,7 @@ def main():
     df = load_arXiv_data(args, subset="last_10000")
     print("Done!")
 
-    df['published'] = pd.to_datetime(df['published'])
+    df['published'] = pd.to_datetime(df['published'], utc=True)
 
     N = 1
 

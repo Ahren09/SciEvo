@@ -33,7 +33,7 @@ def main():
 
     if osp.exists(path):
         monthly_count = pd.read_excel(path)
-        monthly_count['published'] = pd.to_datetime(monthly_count['published'])
+        monthly_count['published'] = pd.to_datetime(monthly_count['published'], utc=True)
         monthly_count = monthly_count[monthly_count['published'] >= '1990-01']
         monthly_count.set_index('published', inplace=True)
 
