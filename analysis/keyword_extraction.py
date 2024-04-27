@@ -17,7 +17,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
-import spacy
+
 from matplotlib import pyplot as plt
 from nltk import BigramCollocationFinder, BigramAssocMeasures, TrigramCollocationFinder, TrigramAssocMeasures
 from nltk.corpus import stopwords
@@ -69,6 +69,7 @@ def extract_keywords_spacy(text):
 
     # Load Spacy model if not already loaded
     if nlp is None:
+        import spacy
         nlp = spacy.load("en_core_web_md")
 
     """
