@@ -179,41 +179,34 @@ ARXIV_CATEGORY_KEYWORDS = {
 
 # map the subject names to a list of keywords
 SUBJECT2KEYWORDS = {
-    "Medicine": [(
-        "precision medicine",
-        "precision",
-        "genomic medicine",
-        "personalized",
-        "pharmacogenomics",
-        "biomarker discovery",
-        "targeted",
-        "individualized",
-        "predictive",
-    ),
-        ("immunotherapy",
-         "cancer",
-         "checkpoint",
-         "car", "t-cell",
-         "immune", "modulators",
-         "monoclonal antibodies",
-         "vaccine therapy",
-         "blockade",
-         "adoptive cell transfer",
-         "cytokine"
-         ),
-        ("digital health", "telehealth", "telemedicine", "wearable devices", "healthcare "
-                                                                             "analytics"),
+    "Medicine": [
+        ("precision medicine", "precision", "genomic medicine", "personalized", "pharmacogenomics", "biomarker discovery", "targeted", "individualized", "predictive"),
+        ("immunotherapy", "cancer", "checkpoint", "car", "t-cell", "immune", "modulators", "monoclonal antibodies", "vaccine therapy", "blockade", "adoptive cell transfer", "cytokine"),
+        ("digital health", "telehealth", "telemedicine", "wearable devices", "healthcare analytics"),
         ("covid", "covid-19", "sars-cov-2", "coronavirus", "pandemic", "post-acute sequelae"),
         ("microbiome therapeutics", "gut-brain axis", "probiotics", "microbial ecology"),
         ("car", "t-cell therapy", "immunotherapy", "adoptive cell transfer", "lymphoma treatment", "biotechnology"),
         ("neurodegenerative", "alzheimer", "parkinson", "tauopathy", "tauopathies"),
+        ("stem cell therapy", "regenerative medicine", "tissue engineering", "cell therapy", "bone marrow transplant", "pluripotent stem cells"),
+        ("radiology", "imaging", "MRI", "CT scan", "ultrasound", "nuclear medicine", "diagnostic imaging"),
+        ("epidemiology", "public health", "disease surveillance", "vaccination programs", "health policy", "outbreak response"),
+        ("aging", "gerontology", "longevity", "senescence", "anti-aging therapies", "age-related diseases"),
+        ("mental health", "psychiatry", "depression", "anxiety", "PTSD", "cognitive behavioral therapy", "psychotherapy"),
     ],
-    "Biology": [("genome engineering", "crispr", "crispr-cas9", "gene editing", "gene therapy", "molecular cloning"),
-                ("synthetic biology", "synthetic genomes", "artificial life", "genetic synthesis", "bioengineering"),
-                ("environmental dna", "biodiversity", "ecological surveying", "conservation genetics"),
-                ("bioinformatics", "phylogenetics", "genomic sequencing", "taxonomy"),
-                ("neuroscience", "neural circuits", "neurobiology", "brain function", "cognitive")
-                ],
+
+    "Biology": [
+        ("genome engineering", "crispr", "crispr-cas9", "gene editing", "gene therapy", "molecular cloning"),
+        ("synthetic biology", "synthetic genomes", "artificial life", "genetic synthesis", "bioengineering"),
+        ("environmental dna", "biodiversity", "ecological surveying", "conservation genetics"),
+        ("bioinformatics", "phylogenetics", "genomic sequencing", "taxonomy"),
+        ("neuroscience", "neural circuits", "neurobiology", "brain function", "cognitive"),
+        ("plant biology", "photosynthesis", "botany", "plant genetics", "agricultural science", "crop engineering"),
+        ("marine biology", "oceanography", "aquatic ecosystems", "coral reefs", "marine conservation", "deep-sea research"),
+        ("developmental biology", "embryology", "organogenesis", "morphogenesis", "growth factors", "stem cell niches"),
+        ("evolutionary biology", "natural selection", "speciation", "phylogeny", "adaptive evolution", "population genetics"),
+        ("microbiology", "bacteriology", "virology", "pathogens", "antibiotics", "infectious diseases", "microbial resistance"),
+    ],
+
     "Physics": [
         ("quantum computing", "quantum", "quantum mechanics", "quantum field", "quantum algorithms",
          "quantum cryptography"),
