@@ -9,26 +9,21 @@ import os.path as osp
 import re
 import string
 import sys
-import traceback
 import warnings
-from collections import Counter, defaultdict
+from collections import Counter
 from multiprocessing import Pool
 from typing import List
 
-import numpy as np
 import pandas as pd
-
-from matplotlib import pyplot as plt
 from nltk import BigramCollocationFinder, BigramAssocMeasures, TrigramCollocationFinder, TrigramAssocMeasures
-from nltk.corpus import stopwords
 from rake_nltk import Rake
 from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
+sys.path.insert(0, os.path.abspath('..'))
+
 from utility.utils_data import load_arXiv_data, get_titles_or_abstracts_as_list
 from utility.utils_text import split_text_into_tokens, stopwords_set, english_stopwords, load_semantic_scholar_data
-
-sys.path.insert(0, os.path.abspath('..'))
 
 import const
 from arguments import parse_args
@@ -37,8 +32,8 @@ from utility.utils_misc import project_setup
 # Suppress FutureWarning
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-
 nlp = None  # Placeholder for Spacy model
+
 
 def custom_tokenizer(text):
     """
@@ -197,6 +192,7 @@ def extract_words(features_list: List[str]):
 
     return tokens
 
+
 def extract_1grams(tokens: List[List[str]]):
     unigrams = []
     for i in range(len(tokens)):
@@ -250,7 +246,6 @@ def extract_2grams(tokens: List[List[str]]):
 
     bigrams_set = set(bigram_finder.nbest(BigramAssocMeasures.likelihood_ratio, 200000))
 
-
     bigrams, bigrams_filtered = [], []
     for tokens_one_example in tqdm(tokens, desc="Construct 2-grams"):
 
@@ -262,14 +257,11 @@ def extract_2grams(tokens: List[List[str]]):
                 bigrams_one_examples_filtered += [bigram]
             # bigrams_one_examples += [bigram]
 
-
-
         # bigrams += [bigrams_one_examples]
         bigrams_filtered += [bigrams_one_examples_filtered]
 
     assert len(bigrams_filtered) == len(tokens)
     return bigrams_filtered
-
 
 
 def extract_3grams(tokens: List[List[str]]):
@@ -291,8 +283,8 @@ def extract_3grams(tokens: List[List[str]]):
     trigrams_set = set(trigram_finder.nbest(TrigramAssocMeasures.likelihood_ratio, 200000))
 
     trigrams_set = [(w1, w2, w3) for w1, w2, w3 in trigrams_set if
-                         w3 not in {'the', 'of', 'from', 'in', 'on',
-                                    'to', 'for', 'with', }]
+                    w3 not in {'the', 'of', 'from', 'in', 'on',
+                               'to', 'for', 'with', }]
 
     trigrams, trigrams_filtered = [], []
     for tokens_one_example in tqdm(tokens, desc="Construct 3-grams"):
@@ -307,7 +299,6 @@ def extract_3grams(tokens: List[List[str]]):
         # trigrams += [trigrams_one_examples]
         trigrams_filtered += [trigrams_one_examples_filtered]
 
-
     assert len(trigrams_filtered) == len(tokens)
 
     return trigrams_filtered
@@ -320,11 +311,9 @@ if __name__ == "__main__":
     START_YEAR, START_MONTH = 1990, 1
     END_YEAR, END_MONTH = 2024, 4
 
-
     semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
 
     # semantic_scholar_data.explode(const.FOS)["paperId"]
-
 
     if args.debug:
         data = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
@@ -337,7 +326,6 @@ if __name__ == "__main__":
 
     # all_abstract_words = extract_unigrams_from_abstract()
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)
-
 
     for col in ["title", "summary"]:
         feature_list = get_titles_or_abstracts_as_list(data, col)
