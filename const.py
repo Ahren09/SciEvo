@@ -250,7 +250,7 @@ SUBJECT2KEYWORDS = {
                           "perception", "yolo", "cnn", "cnns", "convolutional", "convolution", "object detection",
                           "object recognition"),
                          ("large language models", "llm", "llms", "gpt", "chatgpt", "gpt4", "gpt3", "gpt-4", "gpt-3",
-                          "rlhf"),
+                          "rlhf", "chain-of-thought", "cot"),
                          ("graph neural networks", "gnn", "gcn", "gat", "graphsage", "graph mining", "gnns",
                           "network analysis",
                           "geometric"),

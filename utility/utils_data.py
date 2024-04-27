@@ -114,7 +114,7 @@ def get_titles_or_abstracts_as_list(data: pd.DataFrame, column_name: str):
         data (pd.DataFrame): DataFrame containing the data.
         column_name (str): Column name to extract data from.
 
-    Returns (list): List of titles or abstracts.
+    Returns (list): List of titles or abstracts. Each entry is a string.
     """
     assert column_name in ['title', 'summary']
 

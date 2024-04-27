@@ -29,5 +29,8 @@ def parse_args():
                                                                        "cache. ")
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
+    parser.add_argument('--min_occurrences', type=int, help="Minimum number of times a keyword needs to appear in the corpus",
+                        default=5)
+
     args = parser.parse_args()
     return args

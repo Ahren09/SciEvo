@@ -13,6 +13,7 @@ import traceback
 import warnings
 from collections import Counter, defaultdict
 from multiprocessing import Pool
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -187,27 +188,56 @@ def extract_unigrams_from_abstract(data):
     return all_abstract_words
 
 
-def extract_ngrams(features_list):
-    """
-    Extract unigrams, bigrams, and trigrams from the given list of features.
-
-    """
-
-    # Tokenize and preprocess each abstract
-    all_tokens = []
-    unigrams = []
-
-    for i, entry in enumerate(tqdm(features_list, desc="Extract 1grams", total=len(features_list))):
+def extract_words(features_list: List[str]):
+    tokens = []
+    for i, entry in enumerate(tqdm(features_list, desc="Extract individual words", total=len(features_list))):
         tokens_one_example = split_text_into_tokens(entry)
-        all_tokens += [tokens_one_example]
-        unigrams += [[token for token in tokens_one_example if token not in stopwords_set]]
+        tokens += [tokens_one_example]
 
-    # Extract unigrams
-    count_unigrams = Counter([token for tokens_one_example in all_tokens for token in tokens_one_example])
+    return tokens
 
-    count = sum(1 for count in count_unigrams.values() if count >= 3)
+def extract_1grams(tokens: List[List[str]]):
+    unigrams = []
+    for i in range(len(tokens)):
+        unigrams += [[token for token in tokens[i] if token not in stopwords_set]]
 
-    tokens_flatten = [token for tokens_one_example in all_tokens for token in tokens_one_example]
+    count_unigrams = Counter([token for tokens_one_example in unigrams for token in tokens_one_example])
+
+    num_unigrams = sum(1 for count in count_unigrams.values() if count >= args.min_occurrences)
+    print(f"Number of unigrams (unfiltered): {num_unigrams}")
+
+    tokens = [[token for token in tokens_one_example if count_unigrams[token] >= args.min_occurrences] for
+              tokens_one_example
+              in unigrams]
+
+    tokens_flatten = [token for tokens_one_example in tokens for token in tokens_one_example]
+
+    # hard-cap #unigrams at a reasonable number
+    unigrams_set = pd.DataFrame(Counter(tokens_flatten).most_common(200000), columns=["keyword", "count"])
+    unigrams_set = unigrams_set[unigrams_set['count'] >= args.min_occurrences][:200000].keyword.tolist()
+    print(f"Number of unigrams (filtered): {len(unigrams_set)}")
+
+    unigrams, unigrams_filtered = [], []
+    for tokens_one_example in tqdm(tokens, desc="Construct 1-grams"):
+
+        unigrams_one_examples, unigrams_one_examples_filtered = [], []
+        for i in range(len(tokens_one_example)):
+            unigram = tokens_one_example[i]
+
+            if unigram in unigrams_set:
+                unigrams_one_examples_filtered += [unigram]
+            # unigrams_one_examples += [unigram]
+
+        # unigrams += [unigrams_one_examples]
+        unigrams_filtered += [unigrams_one_examples_filtered]
+
+    assert len(unigrams_filtered) == len(tokens)
+
+    return unigrams, unigrams_filtered
+
+
+def extract_2grams(tokens: List[List[str]]):
+    tokens_flatten = [token for tokens_one_example in tokens for token in tokens_one_example]
 
     # Extract bigrams
     bigram_finder = BigramCollocationFinder.from_words(tokens_flatten)
@@ -215,52 +245,71 @@ def extract_ngrams(features_list):
     bigram_finder.apply_word_filter(lambda x: any(stop_word == x for stop_word in
                                                   {'$', 'a', 'are', 'by', 'for', 'how', 'in', 'is', 'not', 'of', 'on',
                                                    'than', 'the', 'to', 'what', 'when', 'with'}))
-    bigram_finder.apply_freq_filter(3)  # only bigrams that appear 3+ times
+    bigram_finder.apply_freq_filter(args.min_occurrences)  # only bigrams that appear 3+ times
 
-    bigrams_set = set(bigram_finder.nbest(BigramAssocMeasures.likelihood_ratio, 100000))
+    bigrams_set = set(bigram_finder.nbest(BigramAssocMeasures.likelihood_ratio, 200000))
 
 
+    bigrams, bigrams_filtered = [], []
+    for tokens_one_example in tqdm(tokens, desc="Construct 2-grams"):
 
-    bigrams = []
-    for tokens_one_example in tqdm(all_tokens, desc="Construct bigrams"):
-
-        bigrams_one_examples = []
+        bigrams_one_examples, bigrams_one_examples_filtered = [], []
         for i in range(len(tokens_one_example) - 1):
             bigram = (tokens_one_example[i], tokens_one_example[i + 1])
 
             if bigram in bigrams_set:
-                bigrams_one_examples += [bigram]
+                bigrams_one_examples_filtered += [bigram]
+            # bigrams_one_examples += [bigram]
 
-        bigrams += [bigrams_one_examples]
 
 
+        # bigrams += [bigrams_one_examples]
+        bigrams_filtered += [bigrams_one_examples_filtered]
+
+    assert len(bigrams_filtered) == len(tokens)
+    return bigrams_filtered
+
+
+
+def extract_3grams(tokens: List[List[str]]):
+    """
+    Extract unigrams, bigrams, and trigrams from the given list of features.
+
+    """
+
+    # Tokenize and preprocess each abstract
+
+    tokens_flatten = [token for tokens_one_example in tokens for token in tokens_one_example]
 
     # Extract trigrams
     trigram_finder = TrigramCollocationFinder.from_words(tokens_flatten)
 
     # only trigrams that appear 3+ times
-    trigram_finder.apply_freq_filter(3)
+    trigram_finder.apply_freq_filter(args.min_occurrences)
 
-    trigrams_set = set(trigram_finder.nbest(TrigramAssocMeasures.likelihood_ratio, 100000))
+    trigrams_set = set(trigram_finder.nbest(TrigramAssocMeasures.likelihood_ratio, 200000))
 
     trigrams_set = [(w1, w2, w3) for w1, w2, w3 in trigrams_set if
                          w3 not in {'the', 'of', 'from', 'in', 'on',
                                     'to', 'for', 'with', }]
 
-    trigrams = []
-    for tokens_one_example in tqdm(all_tokens, desc="Construct trigrams"):
-        trigrams_one_examples = []
+    trigrams, trigrams_filtered = [], []
+    for tokens_one_example in tqdm(tokens, desc="Construct 3-grams"):
+        trigrams_one_examples, trigrams_one_examples_filtered = [], []
         for i in range(len(tokens_one_example) - 2):
             trigram = (tokens_one_example[i], tokens_one_example[i + 1], tokens_one_example[i + 2])
 
             if trigram in trigrams_set:
-                trigrams_one_examples += [trigram]
+                trigrams_one_examples_filtered += [trigram]
+            trigrams_one_examples += [trigram]
 
-        trigrams += [trigrams_one_examples]
+        # trigrams += [trigrams_one_examples]
+        trigrams_filtered += [trigrams_one_examples_filtered]
 
-    assert len(unigrams) == len(bigrams) == len(trigrams)
 
-    return unigrams, bigrams, trigrams
+    assert len(trigrams_filtered) == len(tokens)
+
+    return trigrams_filtered
 
 
 if __name__ == "__main__":
@@ -268,7 +317,7 @@ if __name__ == "__main__":
     project_setup()
     args = parse_args()
     START_YEAR, START_MONTH = 1990, 1
-    END_YEAR, END_MONTH = 2024, 5
+    END_YEAR, END_MONTH = 2024, 4
 
 
     semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
@@ -289,15 +338,22 @@ if __name__ == "__main__":
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)
 
 
-    unigrams, bigrams, trigrams = extract_ngrams(get_titles_or_abstracts_as_list(data, "title"))
-    assert len(data) == len(unigrams) == len(bigrams) == len(trigrams)
+    for col in ["title", "summary"]:
+        feature_list = get_titles_or_abstracts_as_list(data, col)
+        tokens = extract_words(feature_list)
+        json.dump(tokens, open(osp.join(args.output_dir, f"{col}_tokens.json"), "w"), indent=2)
 
-    print(f"Number of unigrams: {len(unigrams)}")
-    json.dump(unigrams, open(osp.join(args.output_dir, "unigrams.json"), "w"), indent=2)
-    print(f"Number of bigrams: {len(unigrams)}")
-    json.dump(bigrams, open(osp.join(args.output_dir, "bigrams.json"), "w"), indent=2)
-    print(f"Number of trigrams: {len(unigrams)}")
-    json.dump(trigrams, open(osp.join(args.output_dir, "trigrams.json"), "w"), indent=2)
+        unigrams_filtered = extract_1grams(tokens)
+        # json.dump(unigrams, open(osp.join(args.output_dir, f"{col}_unigrams.json"), "w"), indent=2)
+        json.dump(unigrams_filtered, open(osp.join(args.output_dir, f"{col}_unigrams_filtered.json"), "w"), indent=2)
+
+        bigrams_filtered = extract_2grams(tokens)
+        # json.dump(bigrams, open(osp.join(args.output_dir, f"{col}_bigrams.json"), "w"), indent=2)
+        json.dump(bigrams_filtered, open(osp.join(args.output_dir, f"{col}_bigrams_filtered.json"), "w"), indent=2)
+
+        trigrams_filtered = extract_3grams(tokens)
+        # json.dump(trigrams, open(osp.join(args.output_dir, f"{col}_trigrams.json"), "w"), indent=2)
+        json.dump(trigrams_filtered, open(osp.join(args.output_dir, f"{col}_trigrams_filtered.json"), "w"), indent=2)
 
     exit(0)
 
