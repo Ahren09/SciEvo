@@ -21,6 +21,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))
 
 from utility.utils_data import load_arXiv_data, get_titles_or_abstracts_as_list
 from utility.utils_text import split_text_into_tokens, stopwords_set, english_stopwords, load_semantic_scholar_data

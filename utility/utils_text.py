@@ -29,22 +29,17 @@ def load_semantic_scholar_data_one_month(data_dir, year: int, month: int):
 
 
 def load_semantic_scholar_data(data_dir, start_year: int, start_month: int, end_year: int, end_month: int):
-    df_li = []
+    df = pd.read_parquet(osp.join(data_dir, "NLP", "semantic_scholar",
+                                                     f"semantic_scholar.parquet"))
 
-    for year in range(start_year, end_year + 1):
-        for month in range(1, 13):
+    start_time = pd.Timestamp(year=start_year, month=start_month, day=1, tz='utc')
+    end_time = pd.Timestamp(year=end_year, month=end_month, day=1, tz='utc')
+    df = df[(df.arXivPublicationDate >= start_time) & (df.arXivPublicationDate < end_time)].reset_index(drop=True)
 
-            # End month will not be included
-            if (month < start_month and year <= start_year) or (month >= end_month and year >= end_year):
-                continue
 
-            print(f"Loading Year {year} Month {month}")
+    print(f"Loaded {len(df)} entries from Semantic Scholar.")
 
-            df = load_semantic_scholar_data_one_month(data_dir, year, month)
-
-            df_li += [df]
-
-    df = pd.concat(df_li, ignore_index=True)
     df.publicationDate = pd.to_datetime(df.publicationDate, utc=True)
+    df.arXivPublicationDate = pd.to_datetime(df.arXivPublicationDate, utc=True)
 
     return df
