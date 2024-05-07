@@ -30,10 +30,12 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
 
         data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True)
 
-        start_time = datetime.datetime(start_year, start_month, 1, tzinfo=pytz.utc)
-        end_time = datetime.datetime(end_year, end_month, 1, tzinfo=pytz.utc)
+        if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
 
-        data = data[(data[const.PUBLISHED] >= start_time) & (data[const.PUBLISHED] < end_time)].reset_index(drop=True)
+            start_time = datetime.datetime(start_year, start_month, 1, tzinfo=pytz.utc)
+            end_time = datetime.datetime(end_year, end_month, 1, tzinfo=pytz.utc)
+
+            data = data[(data[const.PUBLISHED] >= start_time) & (data[const.PUBLISHED] < end_time)].reset_index(drop=True)
 
 
 

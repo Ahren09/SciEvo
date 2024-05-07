@@ -26,8 +26,12 @@ More information can be found in **[arXiv Submission Taxonomy](https://arxiv.org
    Download the [citation data](https://www.dropbox.com/scl/fo/2005u201x6gmdp44vqdkf/AFSIjfUPB87Ew9_mgwjT8Gc?rlkey=jykfw2rm3p38bwex44rs4hcm7&dl=0) from Dropbox:
 
    NOTE: The link will expire on July 22, 2024. A new link will be provided by that time.
-
    
+    Download the data files `references_*.parquet`
+
+    **Note**: There is a column called `arxivPulicationDate` in both `references_*.parquet` and `semantic_scholar.parquet`, which is the published timestamp of the papers according to arXiv. I added this because the publication time displayed by Semantic Scholar is inaccurate.
+
+ 
 
 2. Create a new environment
 

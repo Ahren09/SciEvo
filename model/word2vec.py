@@ -1,8 +1,11 @@
 import datetime
+import json
 import os
 import os.path as osp
+import pickle
 import re
 import sys
+from copy import deepcopy
 from typing import Set
 
 import nltk
@@ -10,16 +13,19 @@ import numpy as np
 import pandas as pd
 import pytz
 import scipy.sparse as sp
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, KeyedVectors
 from nltk.corpus import stopwords
 from tqdm import tqdm
+
+import const
+
+sys.path.append(osp.join(os.getcwd(), "src"))
 
 from model.vectorizer import CustomCountVectorizer
 from utility.utils_data import load_arXiv_data
 from utility.utils_misc import project_setup
 
-sys.path.append(osp.join(os.getcwd(), "src"))
-from utility.wordbank import ALL_EXCLUDED_WORDS
+# from utility.wordbank import ALL_EXCLUDED_WORDS
 
 from arguments import parse_args
 
@@ -140,121 +146,244 @@ def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N:
 
 def main():
     print("Loading data...", end='\r')
-    df = load_arXiv_data(args, subset="last_10000")
+
+    data = load_arXiv_data(args.data_dir, start_year=1990, start_month=1, end_year=2024, end_month=4)
     print("Done!")
 
-    df['published'] = pd.to_datetime(df['published'], utc=True)
-
-    N = 1
-
-    vectorizer = CustomCountVectorizer(n_range=range(N, N + 1), args=args)
-
-    vectorizer.load()
-
-    data = load_arXiv_data(args)
-    mask_valid_abstract = np.array([True if isinstance(abs, str) else False for abs in data['summary']])
-    vectorizer = update_vectorizer_naive_implementation(vectorizer, N=N)
-    data.sort_values('published', ascending=True, inplace=True)
+    if USE_PREFILTERED_TOKENS:
+        all_tokenized_docs = json.load(open(osp.join(args.output_dir,
+                                                     f"{args.feature_name}_unigrams_filtered.json")))[1]
 
     total = 0
     total_entries = 0
-    format_string = "%Y-%m-%d"
-
-    print(sum(mask_valid_abstract))
 
     graphs_li = []
 
-    for start_year in range(1991, 2024):
+    for start_year in range(1994, 2025):
 
-        for start_month in range(1, 13):
+        # for start_month in range(1, 13):
+        start_month = 1
 
-            # Treat all papers before 1990 as one single snapshot
-            if start_year < 1992:
-                start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-                end = datetime.datetime(1992, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+        # Treat all papers before 1990 as one single snapshot
+        if start_year == 1994:
+            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            elif start_year == 2023 and start_month == 11:
-                break
+
+        else:
+
+            """
+            # For monthly snapshots
+            if start_month == 12:
+                # Turn to January next year
+                end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
             else:
-                if start_month == 12:
-                    # Turn to January next year
-                    end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-                else:
+                # Turn to the next month in the same year
+                end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)    
+            """
 
-                    # Turn to the next month in the same year
-                    end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-                start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-            mask_time = ((data['published'] >= start) & (data['published'] < end)).values
 
-            # mask: (1984440, )
-            mask = mask_time & mask_valid_abstract
-            total += mask.sum()
-            total_entries += 1
+
+        mask = ((data['published'] >= start) & (data['published'] < end)).values
+        total += mask.sum()
+        total_entries += 1
+
+        if USE_PREFILTERED_TOKENS:
+
+            tokenized_docs = [all_tokenized_docs[idx] for idx in range(len(data)) if mask[idx]]
+
+
+        else:
             data_snapshot = data[mask]
 
-            # (N, V), N = number of documents, V = number of words
-            # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
-            coincidence_matrix = vectorizer.dtm_d[N][mask_time[mask_valid_abstract]]
-            print(
-                f"Generating embeds from {start.strftime(format_string)} to {end.strftime(format_string)}: {len(data_snapshot)} documents, total {total}, coincidence matrix {coincidence_matrix.shape}")
-
-            if DO_WORD2VEC:
-                abstracts = data_snapshot['summary'].tolist()
-
-                tokenized_docs = process_documents(abstracts)
-
-                try:
-                    model = Word2Vec(sentences=tokenized_docs, vector_size=100, window=4, min_count=3,
-                                     sg=1, negative=5, epochs=50, workers=15, seed=42)
-                except:
-                    model = Word2Vec(sentences=tokenized_docs, size=100, window=4,
-                                     min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
-
-                similar_words = model.wv.most_similar('computer', topn=20)
-                print(f"({start}-{end}) Words most similar to 'computer':")
-                for word, similarity in similar_words:
-                    print(f"\t{word}: {similarity:.4f}")
-
-                if args.save_model:
-                    filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
-                    print(f"Saving model to {filename}")
-                    model.save(osp.join(model_path, filename))
+            docs = data_snapshot[args.feature_name].tolist()
+            tokenized_docs = process_documents(docs)
 
 
-            elif DO_GNN:
-                # V = number of words
+        # (N, V), N = number of documents, V = number of words
+        # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
+        print(
+            f"Generating embeds from {start.strftime(format_string)} to {end.strftime(format_string)}: {len(tokenized_docs)} documents, total {total}")
 
-                # (V, V)
-                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
+        if DO_WORD2VEC:
 
-                # Remove the diagonal entries (i.e., word co-occurrence with itself)
-                co_occurrence_matrix.setdiag(0)
+            try:
+                model = Word2Vec(sentences=tokenized_docs, vector_size=args.embed_dim, window=4, min_count=3,
+                                 sg=1, negative=5, epochs=50, workers=args.num_workers, seed=42)
+            except:
+                model = Word2Vec(sentences=tokenized_docs, size=args.embed_dim, window=4,
+                                 min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
 
-                # Eliminate zero entries to maintain sparse structure
-                co_occurrence_matrix.eliminate_zeros()
+            similar_words = model.wv.most_similar('computer', topn=20)
+            print(f"({start}-{end}) Words most similar to 'computer':")
+            for word, similarity in similar_words:
+                print(f"\t{word}: {similarity:.4f}")
 
-                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(format_string)}_'
-                                     f'{end.strftime(format_string)}.npz'),
-                            co_occurrence_matrix)
+            if args.save_model:
+                filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+                print(f"Saving model to {filename}")
+                model.save(osp.join(model_path, filename))
 
-            if start_year < 1992:
-                break
+
+        elif DO_GNN:
+            # Archived
+
+            # V = number of words
+
+            # (V, V)
+            co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
+
+            # Remove the diagonal entries (i.e., word co-occurrence with itself)
+            co_occurrence_matrix.setdiag(0)
+
+            # Eliminate zero entries to maintain sparse structure
+            co_occurrence_matrix.eliminate_zeros()
+
+            sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(format_string)}_'
+                                 f'{end.strftime(format_string)}.npz'),
+                        co_occurrence_matrix)
+
 
     print(f"Total entries: {total_entries}")
 
 
 if __name__ == "__main__":
-    DO_WORD2VEC = False
-    DO_GNN = True
+    DO_WORD2VEC = True
+    DO_GNN = False
+    USE_PREFILTERED_TOKENS = False
+
+    format_string = "%Y-%m-%d"
 
     project_setup()
-
     args = parse_args()
-    model_path = osp.join("checkpoints", "word2vec")
+    model_path = osp.join("checkpoints", args.feature_name, "word2vec")
     os.makedirs(model_path, exist_ok=True)
     main()
+
+
+    # Load each model and construct a combined vocab
+
+
+    all_shared_idx_word_li = []
+
+    shared_wi, shared_iw = None, None
+
+    all_embeds = []
+
+    for start_year in range(1994, 2025):
+
+        # for start_month in range(1, 13):
+        start_month = 1
+
+        # Treat all papers before 1990 as one single snapshot
+        if start_year == 1994:
+            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+
+        else:
+
+            """
+            # For monthly snapshots
+            if start_month == 12:
+                # Turn to January next year
+                end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            else:
+
+                # Turn to the next month in the same year
+                end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            """
+
+            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+
+
+
+        filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+
+        print(f"Loading model from {filename} ...", end='\r')
+
+        model = Word2Vec.load(osp.join(model_path, filename))
+
+        # Create iw and wi for the current model
+        iw = list(model.wv.index_to_key)
+        wi = {word: idx for idx, word in enumerate(iw)}
+
+        if shared_iw is None and shared_wi is None:
+            # First snapshot
+            # Update shared_wi and shared_iw
+            shared_iw = deepcopy(iw)
+            shared_wi = deepcopy(wi)
+            shared_idx_word_li = list(range(len(iw)))
+
+        else:
+            # The rest of the snapshots
+
+            shared_idx_word_li = []
+
+            for idx_word, word in enumerate(iw):
+                if word not in shared_wi:
+                    shared_wi[word] = len(shared_wi)
+                    shared_iw.append(word)
+
+                else:
+                    pass
+
+                shared_idx_word = shared_wi[word]
+
+                shared_idx_word_li += [shared_idx_word]
+
+                print(f"{word}\t{shared_idx_word}")
+
+
+
+        print(f"Loading model from {filename} Done!")
+        all_shared_idx_word_li += [np.array(shared_idx_word_li)]
+
+        all_embeds += [model.wv.vectors]
+
+    os.makedirs(osp.join(args.checkpoint_dir, const.WORD2VEC), exist_ok=True)
+
+    with open(osp.join(args.checkpoint_dir, const.WORD2VEC, 'shared_vocab.pkl'), 'wb') as f:
+        pickle.dump({
+            "wi": shared_wi,
+            "iw": shared_iw
+        }, f)
+
+    for i in range(len(all_embeds)):
+        print(f"Embedding {i}: {all_embeds[i].shape}")
+
+        # Create a memory-mapped file with zero initialization
+        memmap_path = osp.join(args.checkpoint_dir, const.WORD2VEC, f'data_{i}.memmap')
+        memmap_array = np.memmap(memmap_path, dtype=np.float32, mode='w+', shape=(len(shared_wi), args.embed_dim))
+        memmap_array[:] = 0  # Initialize the array with zeros
+
+        memmap_array[all_shared_idx_word_li[i]] = all_embeds[i]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

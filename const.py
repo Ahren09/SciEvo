@@ -8,6 +8,9 @@ PUBLICATIONDATE = "publicationDate"
 SUBJECT = "subject"
 FOS = "fieldsOfStudy"
 
+# Model Names
+WORD2VEC = "word2vec"
+
 ARXIV_CATEGORIES_CS = ['cs.AI', 'cs.AR', 'cs.CC', 'cs.CE', 'cs.CG', 'cs.CL',
                        'cs.CR', 'cs.CV', 'cs.CY', 'cs.DB', 'cs.DC', 'cs.DL',
                        'cs.DM', 'cs.DS', 'cs.ET', 'cs.FL', 'cs.GL', 'cs.GR',
