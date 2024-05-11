@@ -24,14 +24,34 @@ from utility.utils_misc import project_setup
 
 plt.ion()
 
-highlighted_word_tuples = [("large", "language"), ("large", "llm"), ("deep", "learning"), ("language", "bert"),
-                           ("large", "bert"), ("bert", "large"), ("generative", "adversarial"), ("recommendation",
-                                                                                                 "llm"), ("recommendation",
-                                                                                                 "mf"), ("recommendation",
-                                                                                                 "collaborative")]
+
+# Highlighted words for computer science
+# Highlighted words for language models
+highlighted_word_tuples = [("language", "large"),
+                           ("large", "llm"),
+                           ("language", "bert"),
+                           ("deep", "learning"),
+                           ("language", "bert"),
+                           ("large", "bert"),
+                           ("large", "transformer"),
+                           ("generative", "adversarial"),
+                           ("recommendation", "llm"),
+                           ("recommendation", "mf"),
+                           ("recommendation", "collaborative"),
+                           ("cloud", "computing"),
+                           ("ml", "optimization"),
+                           ("language", "attention")]
+
+# Physics
+# highlighted_word_tuples = [("quantum", "computing"), ("quantum", "computer"), ("dark", "matter"), ("dark", "energy"),
+#                            ("gravitational", "waves"),]
+
+#
+# highlighted_word_tuples = [("pandemic", "health"), ("pandemic", "vaccine")]
+
 word_rank = defaultdict(dict)
-years = defaultdict(dict)
-year2vocab_size = {}
+time_dict = defaultdict(dict)
+time2vocab_size = {}
 
 for i, start_year in enumerate(range(1995, 2025)):
     start_month = 1
@@ -57,7 +77,7 @@ for i, start_year in enumerate(range(1995, 2025)):
 
     valid_words_in_embedding = set(np.array(embed.iw)[np.sum(embed.m, axis=1) != 0])
 
-    year2vocab_size[start_year] = len(valid_words_in_embedding)
+    time2vocab_size[start_year] = len(valid_words_in_embedding)
     print(f"Year: {start_year}, Vocab size: {len(valid_words_in_embedding)}")
 
     for word1, word2 in highlighted_word_tuples:
@@ -71,7 +91,7 @@ for i, start_year in enumerate(range(1995, 2025)):
             print(f"[{start.strftime(const.format_string)}] {word1} -> {word2}: {closest_words_ranking[word2]}\t"
                   f"{closest_words_ranking[word2] / len(embed.iw) * 100 :.2f}%")
             word_rank[word1][word2] = word_rank[word1][word2] + [closest_words_ranking[word2]] if word2 in word_rank[word1] else [closest_words_ranking[word2]]
-            years[word1][word2] = years[word1][word2] + [start_year] if word2 in years[word1] else [start_year]
+            time_dict[word1][word2] = time_dict[word1][word2] + [start_year] if word2 in time_dict[word1] else [start_year]
 
 
 
@@ -81,12 +101,12 @@ for (word1, word2) in highlighted_word_tuples:
     if word1 not in word_rank or word2 not in word_rank[word1]:
         continue
 
-    percentiles = [rank / year2vocab_size[year] * 100 for year, rank in zip(years[word1][word2], word_rank[word1][word2])]
-    for year, percentile in zip(years[word1][word2], percentiles):
+    percentiles = [rank / time2vocab_size[year] * 100 for year, rank in zip(time_dict[word1][word2], word_rank[word1][word2])]
+    for year, percentile in zip(time_dict[word1][word2], percentiles):
         data.append({'Year': year, 'Percentile': percentile, 'Word Pair': f'{word1}->{word2}'})
 
 df = pd.DataFrame(data).astype({
-    'Year': int,
+    'Year': str,
     'Word Pair': str
 })
 
@@ -96,6 +116,7 @@ df = pd.DataFrame(data).astype({
 sns.set_theme(style="white")
 plt.figure(figsize=(10, 6))
 ax = sns.lineplot(data=df, x='Year', y='Percentile', hue='Word Pair', palette='viridis', marker='o')
+ax.invert_yaxis()
 ax.set_ylim(100, 0)  # Invert y-axis
 
 ax.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{int(x)}"))

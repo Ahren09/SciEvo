@@ -1,3 +1,9 @@
+"""
+Archived on 2024-05-11. Not sure how we can used this code
+
+"""
+
+
 import json
 import os
 import os.path as osp
@@ -10,10 +16,11 @@ import numpy as np
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
+sys.path.insert(0, os.path.abspath('..'))
+
 from utility.utils_data import load_arXiv_data
 from utility.utils_text import load_semantic_scholar_data
 
-sys.path.insert(0, os.path.abspath('..'))
 
 import const
 from arguments import parse_args

@@ -210,7 +210,7 @@ def main():
         # (N, V), N = number of documents, V = number of words
         # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
         print(
-            f"Generating embeds from {start.strftime(format_string)} to {end.strftime(format_string)}: {len(tokenized_docs)} documents, total {total}")
+            f"Generating embeds from {start.strftime(const.format_string)} to {end.strftime(const.format_string)}: {len(tokenized_docs)} documents, total {total}")
 
         if DO_WORD2VEC:
 
@@ -227,7 +227,7 @@ def main():
                 print(f"\t{word}: {similarity:.4f}")
 
             if args.save_model:
-                filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+                filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
                 print(f"Saving model to {filename}")
                 model.save(osp.join(model_path, filename))
 
@@ -246,8 +246,8 @@ def main():
             # Eliminate zero entries to maintain sparse structure
             co_occurrence_matrix.eliminate_zeros()
 
-            sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(format_string)}_'
-                                 f'{end.strftime(format_string)}.npz'),
+            sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
+                                 f'{end.strftime(const.format_string)}.npz'),
                         co_occurrence_matrix)
 
 
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     DO_GNN = False
     USE_PREFILTERED_TOKENS = False
 
-    format_string = "%Y-%m-%d"
+    const.format_string = "%Y-%m-%d"
 
     project_setup()
     args = parse_args()
@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
 
 
-        filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+        filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
         print(f"Loading model from {filename} ...", end='\r')
 

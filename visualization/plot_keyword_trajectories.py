@@ -8,6 +8,7 @@ import pandas as pd
 import pytz
 import seaborn as sns
 from adjustText import adjust_text
+from gensim.models import Word2Vec
 from openTSNE import TSNE
 
 import const
@@ -63,8 +64,18 @@ if __name__ == "__main__":
 
             start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-        model_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}-{end.strftime(const.format_string)}")
-        embed = Embedding.load(model_path)
+        embed_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}"
+                                            f"-{end.strftime(const.format_string)}")
+
+        model_path = osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, f"word2vec"
+                                                                                      f"_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model")
+
+
+        print(f"Loading model from {model_path} ...", end='\r')
+
+        model = Word2Vec.load(model_path)
+
+        embed = Embedding.load(embed_path)
 
         if start_year == 2023:
             base_embedding = embed
