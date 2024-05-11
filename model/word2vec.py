@@ -18,6 +18,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 import const
+from utility.utils_time import TimeIterator
 
 sys.path.append(osp.join(os.getcwd(), "src"))
 
@@ -150,67 +151,28 @@ def main():
     data = load_arXiv_data(args.data_dir, start_year=1990, start_month=1, end_year=2024, end_month=4)
     print("Done!")
 
-    if USE_PREFILTERED_TOKENS:
-        all_tokenized_docs = json.load(open(osp.join(args.output_dir,
-                                                     f"{args.feature_name}_unigrams_filtered.json")))[1]
-
     total = 0
     total_entries = 0
 
-    graphs_li = []
+    # TODO
+    iterator = TimeIterator(2021, 2024, start_month=6, end_month=3, snapshot_type='monthly')
 
-    for start_year in range(1994, 2025):
-
-        # for start_month in range(1, 13):
-        start_month = 1
-
-
-        # Treat all papers before 1990 as one single snapshot
-        if start_year == 1994:
-            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-        else:
-
-            """
-            # For monthly snapshots
-            if start_month == 12:
-                # Turn to January next year
-                end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            else:
-
-                # Turn to the next month in the same year
-                end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)    
-            """
-
-            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-
+    for (start, end) in iterator:
 
         mask = ((data['published'] >= start) & (data['published'] < end)).values
         total += mask.sum()
         total_entries += 1
 
-        if USE_PREFILTERED_TOKENS:
+        data_snapshot = data[mask]
 
-            tokenized_docs = [all_tokenized_docs[idx] for idx in range(len(data)) if mask[idx]]
-
-
-        else:
-            data_snapshot = data[mask]
-
-            docs = data_snapshot[args.feature_name].tolist()
-            tokenized_docs = process_documents(docs)
+        docs = data_snapshot[args.feature_name].tolist()
+        tokenized_docs = process_documents(docs)
 
 
         # (N, V), N = number of documents, V = number of words
         # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
         print(
-            f"Generating embeds from {start.strftime(format_string)} to {end.strftime(format_string)}: {len(tokenized_docs)} documents, total {total}")
+            f"Generating embeds from {start.strftime(const.format_string)} to {end.strftime(const.format_string)}: {len(tokenized_docs)} documents, total {total}")
 
         if DO_WORD2VEC:
 
@@ -227,28 +189,28 @@ def main():
                 print(f"\t{word}: {similarity:.4f}")
 
             if args.save_model:
-                filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+                filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
                 print(f"Saving model to {filename}")
                 model.save(osp.join(model_path, filename))
 
 
-        elif DO_GNN:
-            # Archived
+            elif DO_GNN:
+                # Archived
 
-            # V = number of words
+                # V = number of words
 
-            # (V, V)
-            co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
+                # (V, V)
+                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
 
-            # Remove the diagonal entries (i.e., word co-occurrence with itself)
-            co_occurrence_matrix.setdiag(0)
+                # Remove the diagonal entries (i.e., word co-occurrence with itself)
+                co_occurrence_matrix.setdiag(0)
 
-            # Eliminate zero entries to maintain sparse structure
-            co_occurrence_matrix.eliminate_zeros()
+                # Eliminate zero entries to maintain sparse structure
+                co_occurrence_matrix.eliminate_zeros()
 
-            sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(format_string)}_'
-                                 f'{end.strftime(format_string)}.npz'),
-                        co_occurrence_matrix)
+                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
+                                     f'{end.strftime(const.format_string)}.npz'),
+                            co_occurrence_matrix)
 
 
     print(f"Total entries: {total_entries}")
@@ -257,9 +219,8 @@ def main():
 if __name__ == "__main__":
     DO_WORD2VEC = True
     DO_GNN = False
-    USE_PREFILTERED_TOKENS = False
 
-    format_string = "%Y-%m-%d"
+    const.format_string = "%Y-%m-%d"
 
     project_setup()
     args = parse_args()
@@ -311,7 +272,7 @@ if __name__ == "__main__":
 
 
 
-        filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+        filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
         print(f"Loading model from {filename} ...", end='\r')
 

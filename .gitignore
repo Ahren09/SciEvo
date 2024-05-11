@@ -4,6 +4,7 @@
 /src/.idea/
 gradio_cached_examples
 checkpoints/
+notebooks
 
 # Output and data files
 ./Data

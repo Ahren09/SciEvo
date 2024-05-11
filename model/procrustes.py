@@ -1,5 +1,7 @@
 import collections
 import datetime
+import os
+import sys
 import os.path as osp
 import pickle
 
@@ -11,6 +13,9 @@ import seaborn as sns
 from gensim.models import Word2Vec
 from sklearn.metrics.pairwise import cosine_similarity
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+import const
 from analysis import alignment
 from utility.utils_data import write_pickle
 
@@ -76,6 +81,9 @@ if __name__ == "__main__":
 
     model_path = osp.join("checkpoints", args.feature_name, "word2vec")
 
+
+    common_words = None # set of common words that appear in all years
+
     for i, start_year in enumerate(range(1995, 2025)):
 
         start_month = 1
@@ -93,7 +101,7 @@ if __name__ == "__main__":
 
             start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-        filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+        filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
         print(f"Loading model from {filename} ...", end='\r')
 
@@ -109,6 +117,10 @@ if __name__ == "__main__":
 
         year_embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
 
+        if common_words is None:
+            common_words = set(year_embed.iw)
+        else:
+            common_words = common_words & set(year_embed.iw)
 
         # embeddings[start_year] = year_embed
         # TODO
@@ -118,11 +130,12 @@ if __name__ == "__main__":
         if first_iter:
             aligned_embed = year_embed
             first_iter = False
+
         else:
             aligned_embed = alignment.smart_procrustes_align(base_embed, year_embed)
         base_embed = aligned_embed
         print("Writing year:", start_year)
-        foutname = osp.join(args.output_dir, f"{start.strftime(format_string)}-{end.strftime(format_string)}")
+        foutname = osp.join(args.output_dir, f"{start.strftime(const.format_string)}-{end.strftime(const.format_string)}")
         np.save(foutname + "-w.npy", aligned_embed.m)
         write_pickle(aligned_embed.iw, foutname + "-vocab.pkl")
 
@@ -131,13 +144,13 @@ if __name__ == "__main__":
     aligned_embeddings = {BASE_YEAR: base_embedding}
     valid_words_mask_base = base_embedding.m.sum(axis=1) != 0
 
+    common_words = np.array(base_embedding.iw)
+
     for year, embedding in embeddings.items():
         if year != BASE_YEAR:
 
 
             valid_words_mask_embed = embedding.m.sum(axis=1) != 0
-
-            common_words = np.array(shared_iw)[valid_words_mask_base & valid_words_mask_embed]
 
             embedding.get_subembed(common_words)
 
