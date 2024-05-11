@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytz
+import seaborn as sns
 from adjustText import adjust_text
 from openTSNE import TSNE
-import seaborn as sns
 
-
-
+import const
 from arguments import parse_args
 from embed.embeddings import Embedding
 from utility.utils_misc import project_setup
@@ -20,7 +19,6 @@ plt.ion()
 
 if __name__ == "__main__":
     BASE_YEAR = 2023
-    format_string = "%Y-%m-%d"
 
     # Load embeddings
     project_setup()
@@ -28,9 +26,24 @@ if __name__ == "__main__":
 
     base_embedding, valid_words_mask_base = None, None
 
+    """
+    highlighted_words_embed_dict:
+    {
+        word1: {
+            1995: EMBED,
+            1996: EMBED,
+            ...
+            2024: EMBED
+        },
+        word2: { ... }
+    }
+    
+    """
+
     highlighted_words_embed_dict = defaultdict(dict)
 
-    highlighted_words = []
+    # We plot the trajectories of these words over time
+    highlighted_words = ["large", "language", "llm"]
     nearest_neighbors = set()
 
     for i, start_year in enumerate(range(1995, 2025)):
@@ -50,22 +63,43 @@ if __name__ == "__main__":
 
             start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-        model_path = osp.join(args.output_dir, f"{start.strftime(format_string)}-{end.strftime(format_string)}")
+        model_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}-{end.strftime(const.format_string)}")
         embed = Embedding.load(model_path)
 
         if start_year == 2023:
             base_embedding = embed
             valid_words_mask_base = embed.m.sum(axis=1) != 0
 
-        highlighted_words_embed = embed.get_subembed(["large", "language", "llm"])
-
-        for word in highlighted_words_embed.iw:
-            closest_words_and_similarity = embed.closest(word, n=5)
-            nearest_neighbors.update([word for _, word in closest_words_and_similarity])
-
-            highlighted_words_embed_dict[word][start_year] = highlighted_words_embed.m[highlighted_words_embed.wi[word]]
+        highlighted_words_embed = embed.get_subembed(highlighted_words)
 
 
+
+        for word1 in highlighted_words:
+            """
+            closest_words_and_similarity:
+            
+            [
+                (similarity1, word1), # The 1st entry corresponds to word1 itself
+                (similarity2, word2), 
+                ...
+            ]
+            """
+
+            closest_words_and_similarity = embed.closest(word1, n=len(embed.iw))
+
+            closest_words_ranking = {word2: i for i, (_, word2) in enumerate(closest_words_and_similarity)}
+
+            for word2 in highlighted_words:
+                if word2 not in closest_words_ranking:
+                    continue
+                print(f"[{start.strftime(const.format_string)}] {word1} -> {word2}: {closest_words_ranking[word2]}\t"
+                      f"{closest_words_ranking[word2] / len(embed.iw) * 100 :.2f}%")
+
+
+            # Only consider the top 5 closest words
+            nearest_neighbors.update([word for i, (_, word) in enumerate(closest_words_and_similarity) if i < 5])
+
+            highlighted_words_embed_dict[word1][start_year] = highlighted_words_embed.m[highlighted_words_embed.wi[word1]]
 
     visualization_model = TSNE(initialization="pca", n_components=2, perplexity=30, metric="cosine", n_iter=300,
                                verbose=True)
@@ -87,7 +121,6 @@ if __name__ == "__main__":
         if row.word in nearest_neighbors and not row.word in highlighted_words_embed_dict and not any([punc in
                                                                                                        row.word for
                                                                                                        punc in ",:_"]):
-
             texts += [ax.text(row.x, row.y, row.word, fontsize=5)]
 
     for word in highlighted_words_embed_dict:
@@ -100,14 +133,13 @@ if __name__ == "__main__":
             if year in [1995, 2000, 2010, 2022, 2023]:
                 texts += [ax.text(embeds[idx_year, 0], embeds[idx_year, 1], f"{word}_{year}", fontsize=7, color='blue')]
 
-
     print("Adjusting text...", end="")
 
     adjust_text(texts, autoalign='xy', expand_points=(1.2, 1.2), expand_text=(1.2, 1.2))
+
+    ax.set_axis_off()
 
     print("Done!")
 
     plt.savefig("keyword_trajectories.pdf", dpi=600, bbox_inches='tight')
     print("Done!")
-
-

@@ -54,7 +54,6 @@ def procrustes_align(base_embed, other_embed, common_words):
 if __name__ == "__main__":
 
     BASE_YEAR = 1996
-    format_string = "%Y-%m-%d"
 
     # Load embeddings
     project_setup()
