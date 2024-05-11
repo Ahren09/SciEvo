@@ -1,6 +1,7 @@
 import datetime
 import json
 import os.path as osp
+import pickle
 import re
 import time
 
@@ -58,6 +59,15 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
     data['summary'].fillna("", inplace=True)
 
     return data
+
+
+def write_pickle(data, filename):
+    fp = open(filename, "wb")
+    pickle.dump(data, fp)
+
+def load_pickle(filename):
+    fp = open(filename, "rb")
+    return pickle.load(fp)
 
 
 def get_arXiv_IDs_of_existing_papers(input):

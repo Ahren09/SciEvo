@@ -3,6 +3,8 @@ import heapq
 import numpy as np
 from sklearn import preprocessing
 
+from utility.utils_data import load_pickle
+
 
 class Embedding:
     """

@@ -1,20 +1,26 @@
 import collections
+import datetime
 import os.path as osp
 import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import pytz
 import seaborn as sns
+from gensim.models import Word2Vec
 from sklearn.metrics.pairwise import cosine_similarity
 
-plt.ion()
+from analysis import alignment
+from utility.utils_data import write_pickle
+
 from openTSNE import TSNE
 
 from arguments import parse_args
 from embed.embeddings import Embedding
 from utility.utils_misc import project_setup
 
+plt.ion()
 # Define the Embedding class if not already defined
 
 
@@ -48,25 +54,78 @@ def procrustes_align(base_embed, other_embed, common_words):
 if __name__ == "__main__":
 
     BASE_YEAR = 1996
+    format_string = "%Y-%m-%d"
 
     # Load embeddings
     project_setup()
     args = parse_args()
 
     # Load shared vocabulary indices
-    with open(f"../arXivData/checkpoints/{args.feature_name}/word2vec/shared_vocab.pkl", 'rb') as f:
-        d = pickle.load(f)
-
-    shared_wi = d["wi"]
-    shared_iw = d["iw"]
+    # with open(f"../arXivData/checkpoints/{args.feature_name}/word2vec/shared_vocab.pkl", 'rb') as f:
+    #     d = pickle.load(f)
+    #
+    # shared_wi = d["wi"]
+    # shared_iw = d["iw"]
 
     embeddings = collections.OrderedDict()
-    for i, year in enumerate(range(1995, 1998)):
-        shape = (len(shared_wi), 300)  # Assuming 300 dimensions
-        embed = np.memmap(osp.join(f"../arXivData/checkpoints/{args.feature_name}/word2vec/data_{year - 1995}.memmap"),
+
+    # Store the nearest words to word1 in each year
+    nearest_words_set = set()
+
+    first_iter = True
+    base_embed = None
+
+    model_path = osp.join("checkpoints", args.feature_name, "word2vec")
+
+    for i, start_year in enumerate(range(1995, 2025)):
+
+        start_month = 1
+
+        # Treat all papers before 1990 as one single snapshot
+        if start_year == 1994:
+            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+
+        else:
+
+            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+
+        filename = f"word2vec_{start.strftime(format_string)}-{end.strftime(format_string)}.model"
+
+        print(f"Loading model from {filename} ...", end='\r')
+
+        model = Word2Vec.load(osp.join(model_path, filename))
+
+        """
+        shape = (len(shared_wi), args.embed_dim)
+        embed = np.memmap(osp.join(f"../arXivData/checkpoints/{args.feature_name}/word2vec/data_"
+                                   f"{start_year - 1995}.memmap"),
                           dtype=np.float32, mode='r+', shape=shape)
-        embed = Embedding(embed, shared_iw, normalize=True)
-        embeddings[year] = embed
+        year_embed = Embedding(embed, shared_iw, normalize=True)
+        """
+
+        year_embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
+
+
+        # embeddings[start_year] = year_embed
+        # TODO
+        # nearest_words_set.update([tup[1] for tup in embed.closest("large", n=10)])
+
+        print("Aligning year:", start_year)
+        if first_iter:
+            aligned_embed = year_embed
+            first_iter = False
+        else:
+            aligned_embed = alignment.smart_procrustes_align(base_embed, year_embed)
+        base_embed = aligned_embed
+        print("Writing year:", start_year)
+        foutname = osp.join(args.output_dir, f"{start.strftime(format_string)}-{end.strftime(format_string)}")
+        np.save(foutname + "-w.npy", aligned_embed.m)
+        write_pickle(aligned_embed.iw, foutname + "-vocab.pkl")
 
     # Use `BASE_YEAR` as the base year for alignment
     base_embedding = embeddings[BASE_YEAR]
@@ -81,8 +140,11 @@ if __name__ == "__main__":
 
             common_words = np.array(shared_iw)[valid_words_mask_base & valid_words_mask_embed]
 
+            embedding.get_subembed(common_words)
 
-            aligned_embeddings[year] = procrustes_align(base_embedding, embedding, common_words)
+            aligned_embeddings[year] = procrustes_align(base_embedding, embedding)
+
+
 
     # Assuming 'aligned_embeddings' is a dictionary of Embedding objects from 1995 to 2025, aligned to 2023
     # Assuming 'aligned_embeddings' is a dictionary of Embedding objects from 1995 to 2025, aligned to 2023
@@ -111,14 +173,18 @@ if __name__ == "__main__":
 
     # Annotate each point in the scatter plot with its word
     for i, point in df.iterrows():
-        ax.text(point['x'],  # This offsets the text slightly to the right of the marker
-                 point['y'],
-                 point['word'],
-                 horizontalalignment='left',
-                 fontsize=5,
-                 color='black',
-                 weight='semibold',
-                )
+
+        if point['word'] in nearest_words_set:
+            ax.text(point['x'],  # This offsets the text slightly to the right of the marker
+                     point['y'],
+                     point['word'],
+                     horizontalalignment='left',
+                     fontsize=5,
+                     color='black',
+                     weight='semibold',
+                    )
+
+    embedding_test = visualization_model.transform(z)(np.array(word1_trajectory))
 
 
 
