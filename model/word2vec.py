@@ -18,6 +18,7 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 
 import const
+from utility.utils_time import TimeIterator
 
 sys.path.append(osp.join(os.getcwd(), "src"))
 
@@ -159,37 +160,10 @@ def main():
 
     graphs_li = []
 
-    for start_year in range(1994, 2025):
+    # TODO
+    iterator = TimeIterator(2021, 2024, start_month=6, end_month=3, snapshot_type='monthly')
 
-        # for start_month in range(1, 13):
-        start_month = 1
-
-
-        # Treat all papers before 1990 as one single snapshot
-        if start_year == 1994:
-            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-        else:
-
-            """
-            # For monthly snapshots
-            if start_month == 12:
-                # Turn to January next year
-                end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            else:
-
-                # Turn to the next month in the same year
-                end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)    
-            """
-
-            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-
+    for (start, end) in iterator:
 
         mask = ((data['published'] >= start) & (data['published'] < end)).values
         total += mask.sum()
@@ -232,23 +206,23 @@ def main():
                 model.save(osp.join(model_path, filename))
 
 
-        elif DO_GNN:
-            # Archived
+            elif DO_GNN:
+                # Archived
 
-            # V = number of words
+                # V = number of words
 
-            # (V, V)
-            co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
+                # (V, V)
+                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
 
-            # Remove the diagonal entries (i.e., word co-occurrence with itself)
-            co_occurrence_matrix.setdiag(0)
+                # Remove the diagonal entries (i.e., word co-occurrence with itself)
+                co_occurrence_matrix.setdiag(0)
 
-            # Eliminate zero entries to maintain sparse structure
-            co_occurrence_matrix.eliminate_zeros()
+                # Eliminate zero entries to maintain sparse structure
+                co_occurrence_matrix.eliminate_zeros()
 
-            sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
-                                 f'{end.strftime(const.format_string)}.npz'),
-                        co_occurrence_matrix)
+                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
+                                     f'{end.strftime(const.format_string)}.npz'),
+                            co_occurrence_matrix)
 
 
     print(f"Total entries: {total_entries}")

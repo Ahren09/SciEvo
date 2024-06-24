@@ -1,5 +1,6 @@
 # Load embeddings
 import datetime
+import os
 import os.path as osp
 from collections import defaultdict
 
@@ -15,6 +16,7 @@ import matplotlib.ticker as ticker
 import const
 from arguments import parse_args
 from utility.utils_misc import project_setup
+from utility.utils_time import TimeIterator
 from visualization import plot_config
 
 project_setup()
@@ -24,23 +26,9 @@ word_occurrences = defaultdict(dict)
 
 years = list(range(1995, 2024))
 
-for i, start_year in enumerate(years):
+iterator = TimeIterator(2021, 2024, start_month=6, end_month=3, snapshot_type='monthly')
 
-    start_month = 1
-
-    # Treat all papers before 1990 as one single snapshot
-    if start_year == 1994:
-        start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-        end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-    else:
-
-        end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-        start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
+for (start, end) in iterator:
     embed_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}"
                                            f"-{end.strftime(const.format_string)}")
 
@@ -58,7 +46,7 @@ for i, start_year in enumerate(years):
         else:
             count = model.wv.get_vecattr(word, 'count')
 
-        word_occurrences[word][start_year] = count
+        word_occurrences[word][start.year] = count
 
 df = pd.DataFrame(word_occurrences)
 
@@ -114,7 +102,8 @@ plt.yticks(fontsize=plot_config.FONT_SIZE)  # Set font size for y-axis scale
 ax.set_xticks([str(year) for year in range(1995, 2025, 5)])
 ax.set_yticks([10, 100, 1000, 10000])
 
+os.makedirs(osp.join(args.output_dir, "visual"), exist_ok=True)
 
-plt.show()
+plt.savefig(osp.join(args.output_dir, "visual", 'lineplot_annual_LLM_keywords.pdf'), dpi=300)
 
 print("Done")
