@@ -29,7 +29,7 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
         # Load the full dataset
         data = pd.read_parquet(osp.join(data_dir, "NLP", "arXiv", "arXiv_metadata.parquet"))
 
-        data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True, format='mixed')
+        data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True)
 
         if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
 

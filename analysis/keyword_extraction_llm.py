@@ -48,64 +48,66 @@ def main():
 
     args = parse_args()
 
-    class CustomExtractor(BaseExtractor):
-        def extract(self, nodes):
-            metadata_list = [
-                {
-                    "custom": (
-                            node.metadata["document_title"]
-                            + "\n"
-                            + node.metadata["excerpt_keywords"]
-                    )
-                }
-                for node in nodes
-            ]
-            return metadata_lists
-
+    if args.attribute == "title":
+        num_keywords = 3
+    else:
+        num_keywords = 15
 
     extractors = [
         # TitleExtractor(nodes=5, llm=llm),
         # QuestionsAnsweredExtractor(questions=3, llm=llm),
         # EntityExtractor(prediction_threshold=0.5),
         # SummaryExtractor(summaries=["prev", "self"], llm=llm),
-        KeywordExtractor(keywords=15, llm=llm),
+        KeywordExtractor(keywords=num_keywords, llm=llm),
         # CustomExtractor()
     ]
 
-    arxiv_data = load_arXiv_data(args.data_dir)
+    for start_year in range(args.start_year, args.end_year):
 
-    transformations = [text_splitter] + extractors
+        arxiv_data = load_arXiv_data(args.data_dir, start_year=start_year, start_month=1, end_year=start_year + 1,
+                                     end_month=1)
 
-    t0 = time.time()
+        transformations = [text_splitter] + extractors
 
-    titles, abstracts = [], []
+        t0 = time.time()
 
-    for i, row in arxiv_data.iterrows():
-        # titles.append(Document(text=title, metadata={"arxiv_id": row["id"], "file_name": f"{row['title']}", "page_label": 0}))
-        abstracts.append(Document(text=f'{row["title"]}\n{row["summary"]}', metadata={"arxiv_id": row["id"], "file_name": f"{row['title']}",
-                                                        "page_label": 0}))
+        docs = []
 
-    # titles = arxiv_data.iloc[:1000]["title"].apply(lambda x: Document(text=x))
-    # abstracts = arxiv_data.iloc[:1000]["summary"].apply(lambda x: Document(text=x))
+        for i, row in arxiv_data.iterrows():
 
-    print(f"Creating documents: {time.time() - t0:.2f} seconds")
+            if args.attribute == "title":
+
+                docs.append(Document(text=f'{row["title"]}', metadata={"arxiv_id": row["id"]}))
+
+            elif args.attribute == "title_and_abstract":
+                docs.append(Document(text=f'{row["title"]}\n{row["summary"]}', metadata={"arxiv_id": row["id"],
+                                                                                       "file_name": f"{row['title']}",
+                                                                "page_label": 0}))
+
+            else:
+                raise ValueError(f"Attribute {args.attribute} not recognized")
+
+        print(f"Creating documents for {args.attribute}: {time.time() - t0:.2f} seconds")
 
 
-    pipeline = IngestionPipeline(transformations=transformations)
+        pipeline = IngestionPipeline(transformations=transformations)
 
-    t0 = time.time()
-    abstracts_nodes = pipeline.run(documents=abstracts, show_progress=True)
+        t0 = time.time()
+        nodes = pipeline.run(documents=docs, show_progress=True)
 
-    print(f"Extracting abstracts: {time.time() - t0:.2f} seconds")
+        print(f"Extracting abstracts: {time.time() - t0:.2f} seconds")
 
-    keywords = {entry.metadata['arxiv_id']: entry.metadata['excerpt_keywords'] for entry in abstracts_nodes}
+        keywords = {entry.metadata['arxiv_id']: entry.metadata['excerpt_keywords'] for entry in nodes}
 
-    print("Saving keywords", end=" ")
-    t0 = time.time()
-    with open(os.path.join(args.data_dir, "NLP", "arXiv", "title_and_abstract_keywords.json"), "w") as f:
-        json.dump(keywords, f)
-        
-    print(f"Saving keywords: {time.time() - t0:.2f} seconds")
+        print("Saving keywords", end=" ")
+        t0 = time.time()
+
+        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.attribute}_keywords_{start_year}.json")
+
+        with open(path, "w") as f:
+            json.dump(keywords, f)
+
+        print(f"Saving keywords: {time.time() - t0:.2f} seconds")
 
 if __name__ == "__main__":
     main()

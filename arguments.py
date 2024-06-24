@@ -7,6 +7,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="")
     # Parameters for Analysis
 
+    parser.add_argument('--attribute', type=str, choices=["title", "abstract", "title_and_abstract"], default=None,
+                        help="Attribute to "
+                                                                                                  "analyze.")
+
     parser.add_argument('--batch_size', type=int, default=256,
                         help="the batch size for models")
     parser.add_argument('--checkpoint_dir', type=str, default="checkpoints")
@@ -28,6 +32,10 @@ def parse_args():
                                                                           "or intermediate results")
     parser.add_argument('--save_every', type=int, default=20, help="Step size for the scheduler")
     parser.add_argument('--save_model', action='store_true', help="Whether to save the trained model")
+
+    parser.add_argument('--start_year', type=int, default=None, help="Year to start downloading")
+    parser.add_argument('--end_year', type=int,default=None, help="Year to end downloading")
+
     parser.add_argument('--load_from_cache', action='store_true', help="Whether to load the processed dataset from "
                                                                        "cache. ")
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
