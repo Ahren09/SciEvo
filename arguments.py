@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--embedding_dim', type=int, help="Step size for the scheduler", default=50)
     parser.add_argument('--epochs', type=int, default=50, help="Number of epochs")
     parser.add_argument('--embed_dim', type=int, default=100, help="Dimension of the generated embeddings.")
+    parser.add_argument('--graph_backend', type=str, default="networkx", choices=["networkx", "rapids"], help="Dimension of the hidden layer.")
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--model_name', type=str, choices=["Word2Vec", "GConvGRU"],  default="GConvGRU")
     parser.add_argument('--num_workers', type=int, default=16,

@@ -122,7 +122,7 @@ if __name__ == "__main__":
         else:
             common_words = common_words & set(year_embed.iw)
 
-        # embeddings[start_year] = year_embed
+        embeddings[start_year] = year_embed
         # TODO
         # nearest_words_set.update([tup[1] for tup in embed.closest("large", n=10)])
 
@@ -141,6 +141,9 @@ if __name__ == "__main__":
 
     # Use `BASE_YEAR` as the base year for alignment
     base_embedding = embeddings[BASE_YEAR]
+
+    # This stores the aligned embeddings for each year
+    # {year -> Embedding}
     aligned_embeddings = {BASE_YEAR: base_embedding}
     valid_words_mask_base = base_embedding.m.sum(axis=1) != 0
 
@@ -148,15 +151,9 @@ if __name__ == "__main__":
 
     for year, embedding in embeddings.items():
         if year != BASE_YEAR:
-
-
             valid_words_mask_embed = embedding.m.sum(axis=1) != 0
-
             embedding.get_subembed(common_words)
-
-            aligned_embeddings[year] = procrustes_align(base_embedding, embedding)
-
-
+            aligned_embeddings[year] = procrustes_align(base_embedding, embedding, common_words)
 
     # Assuming 'aligned_embeddings' is a dictionary of Embedding objects from 1995 to 2025, aligned to 2023
     # Assuming 'aligned_embeddings' is a dictionary of Embedding objects from 1995 to 2025, aligned to 2023
@@ -165,9 +162,14 @@ if __name__ == "__main__":
 
     # Example of accessing trajectory of the word 'large' across years
     word = "large"
-    if word in shared_wi:
-        word_index = shared_wi[word]
-        word1_trajectory = [embed.m[word_index] for year, embed in aligned_embeddings.items()]
+
+    word1_trajectory = []
+
+    for year, aligned_embedding in aligned_embeddings.items():
+        assert aligned_embedding.wi.get(word) is not None, f"Word '{word}' not found in year {year}."
+        word_index = aligned_embedding.wi[word]
+        word1_trajectory += [aligned_embedding.m[word_index]]
+
         print(word1_trajectory)
 
     visualization_model = TSNE(initialization="pca", n_components=2, perplexity=30, metric="cosine" ,n_iter=300,

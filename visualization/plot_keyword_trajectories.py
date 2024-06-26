@@ -54,14 +54,11 @@ if __name__ == "__main__":
         # Treat all papers before 1990 as one single snapshot
         if start_year == 1994:
             start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
             end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
 
         else:
-
             end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
             start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
 
         embed_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}"
@@ -74,7 +71,6 @@ if __name__ == "__main__":
         print(f"Loading model from {model_path} ...", end='\r')
 
         model = Word2Vec.load(model_path)
-
         embed = Embedding.load(embed_path)
 
         if start_year == 2023:
@@ -83,12 +79,9 @@ if __name__ == "__main__":
 
         highlighted_words_embed = embed.get_subembed(highlighted_words)
 
-
-
         for word1 in highlighted_words:
             """
             closest_words_and_similarity:
-            
             [
                 (similarity1, word1), # The 1st entry corresponds to word1 itself
                 (similarity2, word2), 
@@ -110,7 +103,13 @@ if __name__ == "__main__":
             # Only consider the top 5 closest words
             nearest_neighbors.update([word for i, (_, word) in enumerate(closest_words_and_similarity) if i < 5])
 
-            highlighted_words_embed_dict[word1][start_year] = highlighted_words_embed.m[highlighted_words_embed.wi[word1]]
+            if word1 not in highlighted_words_embed.wi:
+                highlighted_words_embed_dict[word1][start_year] = highlighted_words_embed.m[
+                    highlighted_words_embed.wi[word1]]
+
+            else:
+                highlighted_words_embed_dict[word1][start_year] = np.zeros(embed.embed_dim, dtype=np.float32)
+
 
     visualization_model = TSNE(initialization="pca", n_components=2, perplexity=30, metric="cosine", n_iter=300,
                                verbose=True)

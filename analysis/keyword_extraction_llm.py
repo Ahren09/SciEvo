@@ -1,9 +1,9 @@
 """
 Date: 2024.6.23
 
-Keyword extraction using GPT-3.5-turbo model
+Extract keywords from titles OR titles + abstract combined using GPT-3.5-turbo
 
-Run pip install llama-index first
+Run `pip install llama-index` first
 
 """
 
