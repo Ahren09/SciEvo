@@ -5,6 +5,7 @@
 gradio_cached_examples
 checkpoints/
 notebooks
+keys.py
 
 # Output and data files
 ./Data

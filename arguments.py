@@ -1,3 +1,4 @@
+import os
 import os.path as osp
 import argparse
 
@@ -42,6 +43,8 @@ def parse_args():
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
     parser.add_argument('--feature_name', type=str, choices=["title", "summary"], default='title')
+    parser.add_argument('--graphistry_personal_key_id', type=str, default='')
+    parser.add_argument('--graphistry_personal_key_secret', type=str, default='')
 
     parser.add_argument('--min_occurrences', type=int, help="Minimum number of times a keyword needs to appear in the corpus",
                         default=5)
@@ -49,5 +52,7 @@ def parse_args():
     args = parser.parse_args()
 
     args.data_dir = osp.expanduser(args.data_dir)
+    os.makedirs(args.data_dir, exist_ok=True)
+    os.makedirs(args.output_dir, exist_ok=True)
 
     return args
