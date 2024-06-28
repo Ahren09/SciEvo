@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import pandas as pd
 from tqdm import tqdm
-import cudf
-import cugraph
+
 from collections import defaultdict
 
 
@@ -41,6 +40,8 @@ def build_hypergraph(papers, backend="networkx"):
         df = pd.DataFrame(edge_list, columns=['source', 'destination', 'index_paper', 'published_year', 'published_month'])
 
     elif backend == "rapids":
+        import cudf
+
         # Creating a cudf DataFrame
         df = cudf.DataFrame(edge_list, columns=['source', 'destination', 'index_paper', 'published_year', 'published_month'])
 
@@ -76,7 +77,11 @@ if __name__ == "__main__":
 
     else:
         print("Loading hypergraph edges from parquet file")
-        edge_df = cudf.read_parquet(path_graph)
+        if args.graph_backend == "networkx":
+            edge_df = pd.read_parquet(path_graph)
+        elif args.graph_backend == "rapids":
+            import cudf
+            edge_df = cudf.read_parquet(path_graph)
         
     
     print(f"Building the graph ...", end=" ")
@@ -85,18 +90,26 @@ if __name__ == "__main__":
     # Construct snapshot for each year
     
     # Creating a Graph using cuGraph
-    G = cugraph.MultiGraph()
-    
-    # G.from_cudf_edgelist(edge_df, source='source', destination='destination', edge_attr='index_paper', renumber=True)
-    G.from_cudf_edgelist(edge_df.query("published_year == 2024"), source='source', destination='destination', edge_attr='index_paper', renumber=True)
-    print(f"Building the graph: {time() - t0:.2f} seconds")
 
-    # Degree calculation considering multiple edges
-    degrees = G.degrees()
-    print("Degree of each vertex (keyword), considering multiple edges:")
-    print(degrees)
-    
-    
+    if args.graph_backend == "networkx":
+        G = nx.MultiGraph()
+        G.add_edges_from(edge_df.query("published_year == 2024")[["source", "destination"]].values)
+
+    elif args.graph_backend == "rapids":
+        import cugraph
+        G = cugraph.MultiGraph()
+
+        # G.from_cudf_edgelist(edge_df, source='source', destination='destination', edge_attr='index_paper', renumber=True)
+        G.from_cudf_edgelist(edge_df.query("published_year == 2024"), source='source', destination='destination', edge_attr='index_paper', renumber=True)
+        print(f"Building the graph: {time() - t0:.2f} seconds")
+
+        # Degree calculation considering multiple edges
+        degrees = G.degrees()
+        print("Degree of each vertex (keyword), considering multiple edges:")
+        print(degrees)
+
+    nx.write_gexf(G, "multigraph_2024.gexf")
+
     import graphistry
     
     # graphistry.register(api=3, protocol="https", server="hub.graphistry.com", personal_key_id=args.graphistry_personal_key_id, personal_key_secret=args.graphistry_personal_key_secret)

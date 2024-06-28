@@ -70,3 +70,4 @@ pycache/
 *.dtd
 *.ndjson
 *.model
+*.parquet
