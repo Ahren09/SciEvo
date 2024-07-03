@@ -8,13 +8,19 @@ import pandas as pd
 import pytz
 import seaborn as sns
 from adjustText import adjust_text
+from dateutil.relativedelta import relativedelta
 from gensim.models import Word2Vec
 from openTSNE import TSNE
 
 import const
+
 from arguments import parse_args
+from embed import alignment
+
 from embed.embeddings import Embedding
+from model.procrustes import procrustes_align
 from utility.utils_misc import project_setup
+from utility.utils_time import TimeIterator, get_file_times
 
 plt.ion()
 
@@ -24,8 +30,6 @@ if __name__ == "__main__":
     # Load embeddings
     project_setup()
     args = parse_args()
-
-    base_embedding, valid_words_mask_base = None, None
 
     """
     highlighted_words_embed_dict:
@@ -44,40 +48,62 @@ if __name__ == "__main__":
     highlighted_words_embed_dict = defaultdict(dict)
 
     # We plot the trajectories of these words over time
-    highlighted_words = ["large", "language", "llm"]
+    highlighted_words = ["machine learning", "optimization", "large language models", "llm"]
     nearest_neighbors = set()
 
-    for i, start_year in enumerate(range(1995, 2025)):
+    iterator = TimeIterator(1985, 2025, start_month=1, end_month=1, snapshot_type='yearly')
 
-        start_month = 1
+    first_iteration = True
 
-        # Treat all papers before 1990 as one single snapshot
-        if start_year == 1994:
-            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+    words_current_year = set()
+    words_previous_year = set()
 
+    embed_previous_year = None
 
-        else:
-            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+    # Align all embeddings to this timestamp
+    base_embed_start_timestamp = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-        embed_path = osp.join(args.output_dir, f"{start.strftime(const.format_string)}"
-                                            f"-{end.strftime(const.format_string)}")
+    base_embed_filename = f"word2vec_{base_embed_start_timestamp.strftime(const.format_string)}-" \
+                          f"{(base_embed_start_timestamp + relativedelta(years=1)).strftime(const.format_string)}.model"
+
+    base_embed = Word2Vec.load(osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, base_embed_filename))
+
+    base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
+
+    valid_words_mask_base = base_embed.m.sum(axis=1) != 0
+
+    words_base_embeds = set(np.array(base_embed.iw)[valid_words_mask_base])
+
+    for (start, end) in iterator:
 
         model_path = osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, f"word2vec"
                                                                                       f"_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model")
+
+        get_file_times(model_path)
 
 
         print(f"Loading model from {model_path} ...", end='\r')
 
         model = Word2Vec.load(model_path)
-        embed = Embedding.load(embed_path)
+        embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
 
-        if start_year == 2023:
-            base_embedding = embed
-            valid_words_mask_base = embed.m.sum(axis=1) != 0
+        valid_words_mask_cur_year = embed.m.sum(axis=1) != 0
 
-        highlighted_words_embed = embed.get_subembed(highlighted_words)
+        words_current_year = set(np.array(embed.iw)[valid_words_mask_cur_year])
+
+        if start.year == BASE_YEAR:
+            # base_embedding is the year we want to plot the scatterplot
+            aligned_embed = embed
+
+
+        else:
+            # aligned_embed = alignment.smart_procrustes_align(aligned_embed, embed)
+
+            aligned_embed = procrustes_align(base_embed, embed, words_current_year & words_base_embeds)
+
+        highlighted_words_embed = aligned_embed.get_subembed(highlighted_words)
+
+
 
         for word1 in highlighted_words:
             """
@@ -103,22 +129,25 @@ if __name__ == "__main__":
             # Only consider the top 5 closest words
             nearest_neighbors.update([word for i, (_, word) in enumerate(closest_words_and_similarity) if i < 5])
 
-            if word1 not in highlighted_words_embed.wi:
-                highlighted_words_embed_dict[word1][start_year] = highlighted_words_embed.m[
-                    highlighted_words_embed.wi[word1]]
+            if word1 in highlighted_words_embed.wi:
+                highlighted_words_embed_dict[word1][start.year] = highlighted_words_embed.m[
+                    highlighted_words_embed.wi[word1]].astype(np.float32)
 
             else:
-                highlighted_words_embed_dict[word1][start_year] = np.zeros(embed.embed_dim, dtype=np.float32)
+                highlighted_words_embed_dict[word1][start.year] = np.zeros(args.embed_dim, dtype=np.float32)
+
+        embed_previous_year = embed
+        words_previous_year = words_current_year
 
 
     visualization_model = TSNE(initialization="pca", n_components=2, perplexity=30, metric="cosine", n_iter=300,
                                verbose=True)
 
-    embedding_train = visualization_model.fit(base_embedding.m[valid_words_mask_base])
+    embedding_train = visualization_model.fit(base_embed.m[valid_words_mask_base])
 
     # Convert embedding_train and words list into a DataFrame
     df = pd.DataFrame(embedding_train, columns=['x', 'y'])
-    df['word'] = np.array(base_embedding.iw)[valid_words_mask_base]
+    df['word'] = np.array(base_embed.iw)[valid_words_mask_base]
 
     fig, ax = plt.subplots(figsize=(10, 10))
 
@@ -148,8 +177,7 @@ if __name__ == "__main__":
     adjust_text(texts, autoalign='xy', expand_points=(1.2, 1.2), expand_text=(1.2, 1.2))
 
     ax.set_axis_off()
+    plt.show()
 
-    print("Done!")
-
-    plt.savefig("keyword_trajectories.pdf", dpi=600, bbox_inches='tight')
+    # plt.savefig("keyword_trajectories.pdf", dpi=600, bbox_inches='tight')
     print("Done!")

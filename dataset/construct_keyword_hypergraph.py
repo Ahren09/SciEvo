@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from collections import defaultdict
 
-
+from utility.graph_utils import create_simple_graph_from_multigraph
 
 sys.path.append(os.path.abspath('.'))
 from utility.utils_data import load_arXiv_data
@@ -108,6 +108,36 @@ if __name__ == "__main__":
         print("Degree of each vertex (keyword), considering multiple edges:")
         print(degrees)
 
+    # Detect communities
+    from networkx.algorithms.community import greedy_modularity_communities
+    simple_G = create_simple_graph_from_multigraph(G)
+
+    communities = list(greedy_modularity_communities(simple_G, weight='weight'))
+
+    # Print communities
+    for i, community in enumerate(communities):
+        print(f"Community {i}: {sorted(community)}")
+
+    top_nodes_per_community = {}
+    for i, community in enumerate(communities):
+        subgraph = simple_G.subgraph(community)
+        degrees = sorted(subgraph.degree, key=lambda x: x[1], reverse=True)[:5]
+        top_nodes_per_community[i] = degrees
+
+    # Print top nodes per community
+    for community, nodes in top_nodes_per_community.items():
+        print(f"Top nodes in community {community}: {nodes}")
+
+    # Gather all top nodes
+    top_nodes = [node for nodes in top_nodes_per_community.values() for node, degree in nodes]
+
+    # Create subgraph
+    subG = simple_G.subgraph(top_nodes)
+
+    # Export to GEXF for Gephi
+    nx.write_gexf(subG, "top_nodes_subgraph.gexf")
+
+    # This is still too large
     nx.write_gexf(G, "multigraph_2024.gexf")
 
     import graphistry

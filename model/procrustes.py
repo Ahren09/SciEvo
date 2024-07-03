@@ -10,8 +10,11 @@ import numpy as np
 import pandas as pd
 import pytz
 import seaborn as sns
+from dateutil.relativedelta import relativedelta
 from gensim.models import Word2Vec
 from sklearn.metrics.pairwise import cosine_similarity
+
+from utility.utils_time import TimeIterator
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -58,8 +61,6 @@ def procrustes_align(base_embed, other_embed, common_words):
 
 if __name__ == "__main__":
 
-    BASE_YEAR = 1996
-
     # Load embeddings
     project_setup()
     args = parse_args()
@@ -76,30 +77,28 @@ if __name__ == "__main__":
     # Store the nearest words to word1 in each year
     nearest_words_set = set()
 
-    first_iter = True
     base_embed = None
 
     model_path = osp.join("checkpoints", args.feature_name, "word2vec")
 
+    iterator = TimeIterator(2021, 2025, start_month=1, end_month=1, snapshot_type='yearly')
 
-    common_words = None # set of common words that appear in all years
+    common_words = None
 
-    for i, start_year in enumerate(range(1995, 2025)):
+    # Align all embeddings to this timestamp
+    base_embed_start_timestamp = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-        start_month = 1
+    base_embed_filename = f"word2vec_{base_embed_start_timestamp.strftime(const.format_string)}-" \
+                  f"{(base_embed_start_timestamp + relativedelta(years=1)).strftime(const.format_string)}.model"
 
-        # Treat all papers before 1990 as one single snapshot
-        if start_year == 1994:
-            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+    base_embed = Word2Vec.load(osp.join(model_path, base_embed_filename))
 
-            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+    base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
 
 
-        else:
+    for i, (start, end) in enumerate(iterator):
 
-            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
+        # Treat all papers before 1995 as one single snapshot
 
         filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
@@ -107,50 +106,43 @@ if __name__ == "__main__":
 
         model = Word2Vec.load(osp.join(model_path, filename))
 
-        """
-        shape = (len(shared_wi), args.embed_dim)
-        embed = np.memmap(osp.join(f"../arXivData/checkpoints/{args.feature_name}/word2vec/data_"
-                                   f"{start_year - 1995}.memmap"),
-                          dtype=np.float32, mode='r+', shape=shape)
-        year_embed = Embedding(embed, shared_iw, normalize=True)
-        """
-
         year_embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
-
+        # Set of words to visualize
         if common_words is None:
             common_words = set(year_embed.iw)
         else:
             common_words = common_words & set(year_embed.iw)
 
-        embeddings[start_year] = year_embed
+        embeddings[start.year] = year_embed
         # TODO
         # nearest_words_set.update([tup[1] for tup in embed.closest("large", n=10)])
 
-        print("Aligning year:", start_year)
-        if first_iter:
+        print("Aligning year:", start.year)
+        if start == base_embed_start_timestamp:
             aligned_embed = year_embed
-            first_iter = False
+
 
         else:
             aligned_embed = alignment.smart_procrustes_align(base_embed, year_embed)
-        base_embed = aligned_embed
-        print("Writing year:", start_year)
+
+
+        print("Writing year:", start.year)
         foutname = osp.join(args.output_dir, f"{start.strftime(const.format_string)}-{end.strftime(const.format_string)}")
         np.save(foutname + "-w.npy", aligned_embed.m)
         write_pickle(aligned_embed.iw, foutname + "-vocab.pkl")
 
     # Use `BASE_YEAR` as the base year for alignment
-    base_embedding = embeddings[BASE_YEAR]
+    base_embedding = embeddings[base_embed_start_timestamp.year]
 
     # This stores the aligned embeddings for each year
     # {year -> Embedding}
-    aligned_embeddings = {BASE_YEAR: base_embedding}
+    aligned_embeddings = {base_embed_start_timestamp: base_embedding}
     valid_words_mask_base = base_embedding.m.sum(axis=1) != 0
 
-    common_words = np.array(base_embedding.iw)
+    # common_words = np.array(base_embedding.iw)
 
     for year, embedding in embeddings.items():
-        if year != BASE_YEAR:
+        if year != base_embed_start_timestamp.year:
             valid_words_mask_embed = embedding.m.sum(axis=1) != 0
             embedding.get_subembed(common_words)
             aligned_embeddings[year] = procrustes_align(base_embedding, embedding, common_words)
@@ -161,14 +153,19 @@ if __name__ == "__main__":
     word1_trajectory = []
 
     # Example of accessing trajectory of the word 'large' across years
-    word = "large"
+    word = "deep learning"
 
-    word1_trajectory = []
 
+    years = []
     for year, aligned_embedding in aligned_embeddings.items():
-        assert aligned_embedding.wi.get(word) is not None, f"Word '{word}' not found in year {year}."
-        word_index = aligned_embedding.wi[word]
-        word1_trajectory += [aligned_embedding.m[word_index]]
+        if aligned_embedding.wi.get(word) is not None:
+            word_index = aligned_embedding.wi[word]
+            word1_trajectory += [aligned_embedding.m[word_index]]
+            years += [year]
+
+        else:
+            print(f"Word '{word}' not found in year {year}.")
+
 
         print(word1_trajectory)
 
@@ -198,7 +195,7 @@ if __name__ == "__main__":
                      weight='semibold',
                     )
 
-    embedding_test = visualization_model.transform(z)(np.array(word1_trajectory))
+    embedding_test = embedding_train.transform(np.array(word1_trajectory))
 
 
 
@@ -207,14 +204,12 @@ if __name__ == "__main__":
     # Removing years with NaN values if any exist
     nan_indices = np.any(np.isnan(word1_trajectory), axis=1)
     if np.any(nan_indices):
-        print("Warning: Missing 'word1' in some years, skipping these years in the trajectory.")
+        print(f"Warning: Missing '{word}' in some years, skipping these years in the trajectory.")
         word1_trajectory = word1_trajectory[~nan_indices]
 
-    # Now plotting
-    plt.figure(figsize=(10, 5))
-    if word1_trajectory.size > 0:
-        plt.plot(word1_trajectory[:, 0], word1_trajectory[:, 1], 'r--', label='Trajectory of word1')
-        plt.scatter(word1_trajectory[:, 0], word1_trajectory[:, 1], c='red')
+    if len(word1_trajectory) > 0:
+        plt.plot(embedding_test[:, 0], embedding_test[:, 1], 'r--', label='Trajectory of word1')
+        plt.scatter(embedding_test[:, 0], embedding_test[:, 1], c='red', ax=ax)
         plt.title("Trajectory of 'word1' Over Years")
         plt.xlabel("Dimension 1")
         plt.ylabel("Dimension 2")

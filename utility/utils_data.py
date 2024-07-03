@@ -61,6 +61,28 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
     return data
 
 
+def get_keywords_path(data_dir: str, attribute: str):
+    path = osp.join(data_dir, "NLP", "arXiv", f"{attribute}_keywords.json")
+    return path
+
+def load_keywords(data_dir: str, attribute: str):
+    if attribute == "title":
+        num_keywords = 3
+
+    elif attribute == "title_and_abstract":
+        num_keywords = 15
+
+    else:
+        raise ValueError(f"Attribute {attribute} not recognized")
+
+    path = get_keywords_path(data_dir, attribute)
+
+    with open(path, "r") as f:
+        keywords = json.load(f)
+    keywords = {k: [keyword.lower().strip() for keyword in v.split(",")] for k, v in keywords.items()}
+    return keywords
+
+
 def write_pickle(data, filename):
     fp = open(filename, "wb")
     pickle.dump(data, fp)

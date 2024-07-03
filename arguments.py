@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
     parser.add_argument('--feature_name', type=str, choices=["title", "summary"], default='title')
+    parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='title')
     parser.add_argument('--graphistry_personal_key_id', type=str, default='')
     parser.add_argument('--graphistry_personal_key_secret', type=str, default='')
 
