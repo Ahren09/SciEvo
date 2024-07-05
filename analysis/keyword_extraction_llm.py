@@ -48,7 +48,7 @@ def main():
 
     args = parse_args()
 
-    if args.attribute == "title":
+    if args.feature_name == "title":
         num_keywords = 3
     else:
         num_keywords = 15
@@ -75,19 +75,19 @@ def main():
 
         for i, row in arxiv_data.iterrows():
 
-            if args.attribute == "title":
+            if args.feature_name == "title":
 
                 docs.append(Document(text=f'{row["title"]}', metadata={"arxiv_id": row["id"]}))
 
-            elif args.attribute == "title_and_abstract":
+            elif args.feature_name == "title_and_abstract":
                 docs.append(Document(text=f'{row["title"]}\n{row["summary"]}', metadata={"arxiv_id": row["id"],
                                                                                        "file_name": f"{row['title']}",
                                                                 "page_label": 0}))
 
             else:
-                raise ValueError(f"Attribute {args.attribute} not recognized")
+                raise ValueError(f"Attribute {args.feature_name} not recognized")
 
-        print(f"Creating documents for {args.attribute}: {time.time() - t0:.2f} seconds")
+        print(f"Creating documents for {args.feature_name}: {time.time() - t0:.2f} seconds")
 
 
         pipeline = IngestionPipeline(transformations=transformations)
@@ -102,7 +102,7 @@ def main():
         print("Saving keywords", end=" ")
         t0 = time.time()
 
-        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.attribute}_keywords_{start_year}.json")
+        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.feature_name}_keywords_{start_year}.json")
 
         with open(path, "w") as f:
             json.dump(keywords, f)

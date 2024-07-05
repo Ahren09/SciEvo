@@ -22,7 +22,7 @@ def main():
     all_keywords = {}
 
     for start_year in trange(args.start_year, args.end_year):
-        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.attribute}_keywords", f"{args.attribute}_keywords_{start_year}.json")
+        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.feature_name}_keywords", f"{args.feature_name}_keywords_{start_year}.json")
         with open(path, 'r') as f:
             data = json.load(f)
             if not data:
@@ -30,7 +30,7 @@ def main():
 
             all_keywords.update(data)
 
-    path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.attribute}_keywords.json")
+    path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.feature_name}_keywords.json")
 
     with open(path, 'w') as f:
         json.dump(all_keywords, f)

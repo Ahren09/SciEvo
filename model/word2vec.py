@@ -14,7 +14,9 @@ from gensim.models import Word2Vec
 from nltk.corpus import stopwords
 from tqdm import tqdm
 
+sys.path.append(os.getcwd())
 sys.path.append(osp.join(os.getcwd(), "src"))
+
 import const
 from utility.utils_time import TimeIterator
 
@@ -157,9 +159,9 @@ def main():
         all_keywords = load_keywords(args.data_dir, args.feature_name)
 
     elif args.tokenization_mode == "llm_extracted_keyword":
-        all_keywords = load_keywords(args.data_dir, args.attribute)
+        all_keywords = load_keywords(args.data_dir, args.feature_name)
 
-    iterator = TimeIterator(2023, 2025, start_month=1, end_month=1, snapshot_type='yearly')
+    iterator = TimeIterator(1985, 2025, start_month=1, end_month=1, snapshot_type='yearly')
 
     for (start, end) in iterator:
 
@@ -187,45 +189,26 @@ def main():
 
         # (N, V), N = number of documents, V = number of words
         # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
-        if DO_WORD2VEC:
 
-            try:
-                model = Word2Vec(sentences=tokenized_docs, vector_size=args.embed_dim, window=4, min_count=3,
-                                 sg=1, negative=5, epochs=50, workers=args.num_workers, seed=42)
-            except:
-                model = Word2Vec(sentences=tokenized_docs, size=args.embed_dim, window=4,
-                                 min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
+        try:
+            model = Word2Vec(sentences=tokenized_docs, vector_size=args.embed_dim, window=4, min_count=3,
+                             sg=1, negative=5, epochs=50, workers=args.num_workers, seed=42)
+        except:
+            model = Word2Vec(sentences=tokenized_docs, size=args.embed_dim, window=4,
+                             min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
 
-            if KEYPHRASE in model.wv.key_to_index:
+        if KEYPHRASE in model.wv.key_to_index:
 
-                similar_words = model.wv.most_similar(KEYPHRASE, topn=20)
-                print(f"({start}-{end}) Words most similar to '{KEYPHRASE}':")
-                for word, similarity in similar_words:
-                    print(f"\t{word}: {similarity:.4f}")
+            similar_words = model.wv.most_similar(KEYPHRASE, topn=20)
+            print(f"({start}-{end}) Words most similar to '{KEYPHRASE}':")
+            for word, similarity in similar_words:
+                print(f"\t{word}: {similarity:.4f}")
 
-            if args.save_model:
-                filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
-                print(f"Saving model to {filename}")
-                model.save(osp.join(model_path, filename))
+        if args.save_model:
+            filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
+            print(f"Saving model to {filename}")
+            model.save(osp.join(model_path, filename))
 
-
-            elif DO_GNN:
-                # Archived
-
-                # V = number of words
-
-                # (V, V)
-                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
-
-                # Remove the diagonal entries (i.e., word co-occurrence with itself)
-                co_occurrence_matrix.setdiag(0)
-
-                # Eliminate zero entries to maintain sparse structure
-                co_occurrence_matrix.eliminate_zeros()
-
-                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
-                                     f'{end.strftime(const.format_string)}.npz'),
-                            co_occurrence_matrix)
 
     print(f"Total entries: {total_entries}")
 

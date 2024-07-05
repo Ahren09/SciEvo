@@ -55,14 +55,14 @@ if __name__ == "__main__":
     project_setup()
     args = parse_args()
     
-    path_graph = osp.join(args.output_dir, f'{args.attribute}_edges.parquet')
+    path_graph = osp.join(args.output_dir, f'{args.feature_name}_edges.parquet')
     
     
     
     
     
     if not osp.exists(path_graph):
-        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.attribute}_keywords.json")
+        path = os.path.join(args.data_dir, "NLP", "arXiv", f"{args.feature_name}_keywords.json")
         arxiv_data = load_arXiv_data(args.data_dir).set_index("id")
         
 

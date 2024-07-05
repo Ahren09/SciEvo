@@ -8,10 +8,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description="")
     # Parameters for Analysis
 
-    parser.add_argument('--attribute', type=str, choices=["title", "abstract", "title_and_abstract"], default=None,
-                        help="Attribute to "
-                                                                                                  "analyze.")
-
     parser.add_argument('--batch_size', type=int, default=256,
                         help="the batch size for models")
     parser.add_argument('--checkpoint_dir', type=str, default="checkpoints")
@@ -42,7 +38,8 @@ def parse_args():
                                                                        "cache. ")
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
-    parser.add_argument('--feature_name', type=str, choices=["title", "summary"], default='title')
+    parser.add_argument('--feature_name', type=str, choices=["title", "abstract", "title_and_abstract"],
+                        default='title')
     parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='title')
     parser.add_argument('--graphistry_personal_key_id', type=str, default='')
     parser.add_argument('--graphistry_personal_key_secret', type=str, default='')
