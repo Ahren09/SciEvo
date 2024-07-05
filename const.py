@@ -8,6 +8,9 @@ PUBLICATIONDATE = "publicationDate"
 SUBJECT = "subject"
 FOS = "fieldsOfStudy"
 
+SOURCE = "source"
+DESTINATION = "destination"
+
 # Model Names
 WORD2VEC = "word2vec"
 

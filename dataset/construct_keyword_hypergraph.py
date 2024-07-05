@@ -11,9 +11,9 @@ from tqdm import tqdm
 
 from collections import defaultdict
 
-from utility.graph_utils import create_simple_graph_from_multigraph
-
 sys.path.append(os.path.abspath('.'))
+
+from utility.graph_utils import create_simple_graph_from_multigraph
 from utility.utils_data import load_arXiv_data
 from arguments import parse_args
 from utility.utils_misc import project_setup
