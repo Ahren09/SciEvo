@@ -13,6 +13,7 @@ DESTINATION = "destination"
 
 # Model Names
 WORD2VEC = "word2vec"
+GCN = "gcn"
 
 format_string = "%Y-%m-%d"
 

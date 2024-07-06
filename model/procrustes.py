@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import pytz
 import seaborn as sns
+import torch
 from dateutil.relativedelta import relativedelta
 from gensim.models import Word2Vec
 from sklearn.metrics.pairwise import cosine_similarity
@@ -79,7 +80,7 @@ if __name__ == "__main__":
 
     base_embed = None
 
-    model_path = osp.join("checkpoints", args.feature_name, "word2vec")
+    model_path = osp.join("checkpoints", f"{args.feature_name}_{args.tokenization_mode}", args.model_name)
 
     iterator = TimeIterator(2021, 2025, start_month=1, end_month=1, snapshot_type='yearly')
 
@@ -88,12 +89,29 @@ if __name__ == "__main__":
     # Align all embeddings to this timestamp
     base_embed_start_timestamp = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-    base_embed_filename = f"word2vec_{base_embed_start_timestamp.strftime(const.format_string)}-" \
+    base_year = 1996
+    if args.model_name == const.GCN:
+        filename = f"{const.GCN}_embeds_{base_year}.pkl"
+        
+        with open(osp.join(model_path, filename), "rb") as f:
+            d = pickle.load(f)
+        
+        
+        base_embed = d["embed"]
+        
+        node_mapping = d["node_mapping"]
+
+        base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=False)
+    
+    elif args.model_name == const.WORD2VEC:
+        
+        base_embed_filename = f"word2vec_{base_embed_start_timestamp.strftime(const.format_string)}-" \
                   f"{(base_embed_start_timestamp + relativedelta(years=1)).strftime(const.format_string)}.model"
 
-    base_embed = Word2Vec.load(osp.join(model_path, base_embed_filename))
 
-    base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
+        base_embed = Word2Vec.load(osp.join(model_path, base_embed_filename))
+
+        base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
 
 
     for i, (start, end) in enumerate(iterator):

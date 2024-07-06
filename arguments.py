@@ -1,7 +1,12 @@
 import os
 import os.path as osp
+import sys
 import argparse
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+
+import const
 
 def parse_args():
 
@@ -23,7 +28,7 @@ def parse_args():
     parser.add_argument('--embed_dim', type=int, default=100, help="Dimension of the generated embeddings.")
     parser.add_argument('--graph_backend', type=str, default="networkx", choices=["networkx", "rapids"], help="Dimension of the hidden layer.")
     parser.add_argument('--lr', type=float, default=1e-3)
-    parser.add_argument('--model_name', type=str, choices=["Word2Vec", "GConvGRU"],  default="GConvGRU")
+    parser.add_argument('--model_name', type=str, choices=[const.WORD2VEC, const.GCN],  default=const.GCN)
     parser.add_argument('--num_workers', type=int, default=16,
                         help="Number of processes")
     parser.add_argument('--output_dir', type=str, default="outputs", help="Location to store the generated analytics "
@@ -40,7 +45,7 @@ def parse_args():
 
     parser.add_argument('--feature_name', type=str, choices=["title", "abstract", "title_and_abstract"],
                         default='title')
-    parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='title')
+    parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='llm_extracted_keyword')
     parser.add_argument('--graphistry_personal_key_id', type=str, default='')
     parser.add_argument('--graphistry_personal_key_secret', type=str, default='')
 

@@ -6,6 +6,7 @@ from torch_geometric.data import Data, InMemoryDataset, HeteroData
 from typing import Union, Any
 import numpy as np
 import torch
+import pickle
 import torch_geometric.transforms as T
 from sklearn.metrics import roc_auc_score
 from torch import nn
@@ -190,7 +191,7 @@ def evaluate(model, loader, criterion, device):
     roc_auc = roc_auc_score(y_true, y_pred)
     num_zero_embeddings = torch.sum(torch.sum(node_embeddings, dim=1) == 0).item()
     print(f"Number of zero embeddings: {num_zero_embeddings}")
-    return total_loss, roc_auc
+    return total_loss, roc_auc, node_embeddings
 
 
 if __name__ == "__main__":
@@ -248,14 +249,28 @@ if __name__ == "__main__":
         train_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=True)
         eval_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=False)
         
-        for epoch in trange(args.epochs, desc=f"Training {year}"):
+        for epoch in trange(args.epochs, desc=f"Training {year}", position=0, leave=True):
             loss = train(model, train_loader, optimizer, optimizer_sparse, criterion, epoch, args.device)
             print(f'Epoch: {epoch+1}, Loss: {loss:.4f}')
             
-            if epoch == 0 or (epoch + 1) % 10 == 0:
+            if epoch == 0 or (epoch + 1) % args.save_every == 0:
         
-                loss, roc_auc = evaluate(model, eval_loader, criterion, args.device)
+                loss, roc_auc, node_embeddings = evaluate(model, eval_loader, criterion, args.device)
                 print(f'Evaluation Loss: {loss:.4f}, ROC AUC: {roc_auc:.4f}')
+                
+                embed_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN, f"{const.GCN}_embeds_{year}.pkl")
+                
+                os.makedirs(osp.dirname(embed_path), exist_ok=True)
+                
+                # Save the embeddings
+                if epoch + 1 >= (args.epochs):
+                    with open(embed_path, "wb") as f:
+                        pickle.dump({"embed": node_embeddings.cpu(),
+                                    "node_mapping": node_mapping,
+                                    }, f)
+                    
+                    
+                
                 
                 
         # Retrieve the node embeddings
