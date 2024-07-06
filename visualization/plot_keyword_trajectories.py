@@ -1,5 +1,6 @@
 import datetime
 import os.path as osp
+import pickle
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -25,7 +26,7 @@ from utility.utils_time import TimeIterator, get_file_times
 plt.ion()
 
 if __name__ == "__main__":
-    BASE_YEAR = 2023
+    BASE_YEAR = 2000
 
     # Load embeddings
     project_setup()
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     highlighted_words = ["machine learning", "optimization", "large language models", "llm"]
     nearest_neighbors = set()
 
-    iterator = TimeIterator(1985, 2025, start_month=1, end_month=1, snapshot_type='yearly')
+    iterator = TimeIterator(1995, 2003, start_month=1, end_month=1, snapshot_type='yearly')
 
     first_iteration = True
 
@@ -61,14 +62,29 @@ if __name__ == "__main__":
     embed_previous_year = None
 
     # Align all embeddings to this timestamp
-    base_embed_start_timestamp = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+    base_embed_start_timestamp = datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
 
-    base_embed_filename = f"word2vec_{base_embed_start_timestamp.strftime(const.format_string)}-" \
+    base_embed_filename = f"{args.model_name}_{base_embed_start_timestamp.strftime(const.format_string)}-" \
                           f"{(base_embed_start_timestamp + relativedelta(years=1)).strftime(const.format_string)}.model"
 
-    base_embed = Word2Vec.load(osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, base_embed_filename))
+    if args.model_name == "word2vec":
+        base_embed = Word2Vec.load(osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, base_embed_filename))
 
-    base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
+        base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
+
+    elif args.model_name == "gcn":
+
+        path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", args.model_name,
+                        f"gcn_embeds_{BASE_YEAR}.pkl")
+
+        with open(path, "rb") as f:
+            d = pickle.load(f)
+
+        node_mapping = d['node_mapping']
+        embed = d['embed']
+
+        base_embed = Embedding(embed.numpy(), list(node_mapping.keys()), normalize=True)
+
 
     valid_words_mask_base = base_embed.m.sum(axis=1) != 0
 
@@ -76,16 +92,39 @@ if __name__ == "__main__":
 
     for (start, end) in iterator:
 
-        model_path = osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, f"word2vec"
-                                                                                      f"_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model")
+        if args.model_name == const.WORD2VEC:
 
-        get_file_times(model_path)
 
+            model_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN,
+                                  const.GCN,
+                                                                                          f"_"
+                                  f"_embeds_{start.year}.pkl")
+
+            get_file_times(model_path)
+
+            model = Word2Vec.load(model_path)
+            embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
+
+
+        elif args.model_name == const.GCN:
+
+            model_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", args.model_name,
+                            f"{args.model_name}_embeds_{start.year}.pkl")
+
+            with open(model_path, "rb") as f:
+                d = pickle.load(f)
+
+            node_mapping = d['node_mapping']
+            embed = d['embed']
+
+            embed = Embedding(embed.numpy(), list(node_mapping.keys()), normalize=True)
+
+            get_file_times(model_path)
+
+        else:
+            raise NotImplementedError
 
         print(f"Loading model from {model_path} ...", end='\r')
-
-        model = Word2Vec.load(model_path)
-        embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
 
         valid_words_mask_cur_year = embed.m.sum(axis=1) != 0
 
@@ -98,7 +137,6 @@ if __name__ == "__main__":
 
         else:
             # aligned_embed = alignment.smart_procrustes_align(aligned_embed, embed)
-
             aligned_embed = procrustes_align(base_embed, embed, words_current_year & words_base_embeds)
 
         highlighted_words_embed = aligned_embed.get_subembed(highlighted_words)

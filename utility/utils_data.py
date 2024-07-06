@@ -61,6 +61,21 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
     return data
 
 
+def get_embed_path(data_dir: str, feature_name: str, tokenization_mode: str, model_name, start: datetime.datetime,
+                   end: datetime.datetime):
+
+    if model_name == "word2vec":
+        path = osp.join(data_dir, f"{feature_name}_{tokenization_mode}", model_name,
+                        f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model")
+
+    elif model_name == "gcn":
+        path = osp.join(data_dir, f"{feature_name}_{tokenization_mode}", model_name,
+                        f"gcn_{start.year}.pkl")
+
+    else:
+        raise ValueError(f"Model name {model_name} not recognized")
+    return path
+
 def get_keywords_path(data_dir: str, attribute: str):
     path = osp.join(data_dir, "NLP", "arXiv", f"{attribute}_keywords.json")
     return path

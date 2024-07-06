@@ -129,18 +129,22 @@ def train(model, loader, optimizer, optimizer_sparse, criterion, epoch: int, dev
                   )
         
         
-        neg_edge_index = negative_sampling(
-            edge_index=data.edge_index.to(device),
-            num_nodes=data.num_nodes,
-            num_neg_samples=data.edge_index.size(1),
-            method='sparse').to(device)
+        # neg_edge_index = negative_sampling(
+        #     edge_index=data.edge_index.to(device),
+        #     num_nodes=data.num_nodes,
+        #     num_neg_samples=data.edge_index.size(1),
+        #     method='sparse').to(device)
+
+        neg_edge_index = torch.stack([data.edge_index, np.random.randint(0, data.num_nodes, (data.edge_index.shape[
+                                                                                                   1]))])
+
 
         edge_label = torch.cat([
             torch.ones(data.edge_index.shape[1], device=device),
             torch.zeros(data.edge_index.shape[1], device=device)
         ], dim=0)
         
-        out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index], axis=1))
+        out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index.to(device)], axis=1))
         
         loss = criterion(out, edge_label)
         total_loss += loss.item()
