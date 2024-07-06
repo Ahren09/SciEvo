@@ -36,18 +36,7 @@ def build_hypergraph(papers, backend="networkx"):
             for j in range(i + 1, len(keywords)):
                 edge_list.append((keywords[i], keywords[j], index_paper, published.year, published.month))
 
-    if backend == "networkx":
-        df = pd.DataFrame(edge_list, columns=['source', 'destination', 'index_paper', 'published_year', 'published_month'])
-
-    elif backend == "rapids":
-        import cudf
-
-        # Creating a cudf DataFrame
-        df = cudf.DataFrame(edge_list, columns=['source', 'destination', 'index_paper', 'published_year', 'published_month'])
-
-    else:
-        raise ValueError(f"Invalid backend: {backend}")
-
+    df = pd.DataFrame(edge_list, columns=['source', 'destination', 'index_paper', 'published_year', 'published_month'])
     return df
 
 
@@ -77,17 +66,7 @@ if __name__ == "__main__":
 
     else:
         print("Loading hypergraph edges from parquet file")
-        if args.graph_backend == "networkx":
-            edge_df = pd.read_parquet(path_graph)
-        elif args.graph_backend == "rapids":
-            import cudf
-            edge_df = cudf.read_parquet(path_graph).astype({
-                'source': 'str',
-                'destination': 'str',
-                'index_paper': 'int32',
-                'published_year': 'int32',
-                'published_month': 'int32' 
-            })
+        edge_df = pd.read_parquet(path_graph)
         
     
     print(f"Building the graph ...", end=" ")

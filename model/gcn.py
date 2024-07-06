@@ -21,6 +21,7 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.data import Data
 from torch_geometric.loader.utils import filter_data
 from torch_geometric.loader.link_neighbor_loader import LinkNeighborLoader
+from torch_geometric.utils import to_undirected
 
 
 import cudf
@@ -135,8 +136,7 @@ def train(model, loader, optimizer, optimizer_sparse, criterion, epoch: int, dev
         #     num_neg_samples=data.edge_index.size(1),
         #     method='sparse').to(device)
 
-        neg_edge_index = torch.stack([data.edge_index, np.random.randint(0, data.num_nodes, (data.edge_index.shape[
-                                                                                                   1]))])
+        neg_edge_index = torch.stack([data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
 
 
         edge_label = torch.cat([
@@ -171,15 +171,17 @@ def evaluate(model, loader, criterion, device):
             x = model.embedding(data.node.to(device))
             z = model(x, data.edge_index.to(device))
             
-            node_embeddings[data.node] = z.clone()
+            node_embeddings[data.node] = x.clone()
             
-            neg_edge_index = negative_sampling(
-                edge_index=data.edge_index.to(device),
-                num_nodes=data.num_nodes,
-                num_neg_samples=data.edge_index.size(1),
-                method='sparse').to(device)
+            # neg_edge_index = negative_sampling(
+            #     edge_index=data.edge_index.to(device),
+            #     num_nodes=data.num_nodes,
+            #     num_neg_samples=data.edge_index.size(1),
+            #     method='sparse').to(device)
             
-            out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index], axis=1))
+            neg_edge_index = torch.stack([data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
+            
+            out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index.to(device)], axis=1))
             
             edge_label = torch.cat([
                 torch.ones(data.edge_index.shape[1], device=device),
@@ -206,7 +208,7 @@ if __name__ == "__main__":
     
     edge_df = pd.read_parquet(path_graph)
     
-    for year in trange(1994, 2025):
+    for year in trange(args.start_year, args.end_year):
         if year == 1994:
             edges = edge_df.query("published_year >= 1985 and published_year < 1995")
 
@@ -223,19 +225,19 @@ if __name__ == "__main__":
         node_mapping = {node: idx for idx, node in enumerate(unique_nodes)}
 
         # Step 3: Apply the mapping to the source and destination columns
-        edge_counts[const.SOURCE] = edge_counts[const.SOURCE].map(node_mapping)
-        edge_counts[const.DESTINATION] = edge_counts[const.DESTINATION].map(node_mapping)
-
+        # edge_counts[const.SOURCE] = edge_counts[const.SOURCE].map(node_mapping)
+        # edge_counts[const.DESTINATION] = edge_counts[const.DESTINATION].map(node_mapping)
         
         
 
         # Convert to PyTorch Geometric graph
-        src = torch.tensor(edge_counts[const.SOURCE].values, dtype=torch.long)
-        dst = torch.tensor(edge_counts[const.DESTINATION].values, dtype=torch.long)
+        src = torch.tensor(edges[const.SOURCE].map(node_mapping).values, dtype=torch.long)
+        dst = torch.tensor(edges[const.DESTINATION].map(node_mapping).values, dtype=torch.long)
         edge_index = torch.stack([src, dst], dim=0)
-        weights = torch.tensor(edge_counts['weight'].values, dtype=torch.float)
+        # weights = torch.tensor(edge_counts['weight'].values, dtype=torch.float)
         
-        full_data = Data(x=None, edge_index=edge_index, edge_attr=weights)
+        full_data = Data(x=None, edge_index=to_undirected(edge_index) # , edge_attr=weights
+                         )
 
         # Set up model
         model = Net(len(node_mapping), 128, args.embed_dim, device=args.device)
@@ -244,10 +246,10 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(
             params=[p for n, p in model.named_parameters() if
                     "embedding" not in n],
-            lr=0.01)
+            lr=0.003)
         optimizer_sparse = torch.optim.SparseAdam(
             params=[p for n, p in model.named_parameters() if "embedding" in n],
-            lr=0.01)
+            lr=0.003)
         criterion = torch.nn.BCEWithLogitsLoss()
 
         train_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=True)
