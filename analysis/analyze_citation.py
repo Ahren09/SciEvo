@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 
 import pandas as pd
+import pytz
 import seaborn as sns
 from matplotlib import pyplot as plt
 from tqdm import tqdm
@@ -30,12 +31,26 @@ def load_references(year, month, data_dir):
     return paper2references
 
 
-def load_semantic_scholar_papers(year, month, data_dir):
-    path = osp.join(data_dir, "NLP", "semantic_scholar", f"semantic_scholar_{year}_{month}.json")
-    with open(path) as f:
-        semantic_scholar_papers = json.load(f)
+def load_semantic_scholar_papers(data_dir: str, start_year: int = None, start_month: int = None, end_year: int = None,
+                                 end_month: int = None):
+    path = osp.join(data_dir, "NLP", "semantic_scholar", f"semantic_scholar.parquet")
 
-    return semantic_scholar_papers
+    data = pd.read_parquet(path)
+
+    data['arXivPublicationDate'] = pd.to_datetime(data['arXivPublicationDate'], utc=True)
+
+    if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
+        start_time = datetime(start_year, start_month, 1, tzinfo=pytz.utc)
+        end_time = datetime(end_year, end_month, 1, tzinfo=pytz.utc)
+
+        data = data[(data['arXivPublicationDate'] >= start_time) & (data['arXivPublicationDate'] < end_time)].reset_index(drop=True)
+
+    print(f"Loaded {len(data)} entries from Semantic Scholar.")
+
+    data.publicationDate = pd.to_datetime(data.publicationDate, utc=True)
+    data.arXivPublicationDate = pd.to_datetime(data.arXivPublicationDate, utc=True)
+
+    return data
 
 
 if __name__ == "__main__":
@@ -44,8 +59,10 @@ if __name__ == "__main__":
 
     arXivID2References, arXivID2SemanticScholarPaper = {}, {}
 
-    for year in range(1990, 1995):
-        for month in range(1, 2):
+    semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
+
+    for year in range(2023, 2024):
+        for month in range(1, 13):
             references_one_month = load_references(year, month, args.data_dir)
             semantic_scholar_papers_one_month = load_semantic_scholar_papers(year, month, args.data_dir)
             arXivID2References.update(references_one_month)

@@ -1,30 +1,22 @@
 import os
 import os.path as osp
-import traceback
-import warnings
-from torch_geometric.data import Data, InMemoryDataset, HeteroData
-from typing import Union, Any
-import numpy as np
-import torch
 import pickle
-import torch_geometric.transforms as T
+import sys
+import warnings
+from typing import Union, Any
+
+import pandas as pd
+import torch
+import torch.nn.functional as F
 from sklearn.metrics import roc_auc_score
 from torch import nn
-from torch_geometric.loader import DataLoader
-from torch_geometric.nn import GCNConv
-from torch_geometric.utils import negative_sampling
-from tqdm import tqdm, trange
-import pandas as pd
-import sys
-import torch.nn.functional as F
-from torch_geometric.nn import GCNConv
 from torch_geometric.data import Data
-from torch_geometric.loader.utils import filter_data
+from torch_geometric.data import HeteroData
 from torch_geometric.loader.link_neighbor_loader import LinkNeighborLoader
+from torch_geometric.loader.utils import filter_data
+from torch_geometric.nn import GCNConv
 from torch_geometric.utils import to_undirected
-
-
-import cudf
+from tqdm import tqdm, trange
 
 sys.path.append(osp.join(os.getcwd(), "src"))
 sys.path.append(os.getcwd())
@@ -32,9 +24,8 @@ sys.path.append(os.getcwd())
 from utility.utils_misc import project_setup
 from arguments import parse_args
 import const
+
 warnings.simplefilter(action='ignore', category=UserWarning)
-
-
 
 
 class Net(torch.nn.Module):
@@ -69,14 +60,13 @@ class Net(torch.nn.Module):
         return (prob_adj > 0).nonzero(as_tuple=False).t()
 
 
-
 class ArXivLinkNeighborLoader(LinkNeighborLoader):
-    
+
     def filter_fn(self, out: Any) -> Union[Data, HeteroData]:
         """
         We need this function to get the real node idss
         """
-        
+
         if isinstance(self.data, Data):
             if isinstance(out, tuple):
                 (node, row, col, edge, edge_label_index, edge_label) = out
@@ -89,7 +79,6 @@ class ArXivLinkNeighborLoader(LinkNeighborLoader):
                 edge = out.edge
                 edge_label_index = out.metadata[1]
                 edge_label = out.metadata[2]
-
 
             if hasattr(self, "link_sampler"):
                 data = filter_data(self.data, node, row, col, edge,
@@ -114,7 +103,6 @@ class ArXivLinkNeighborLoader(LinkNeighborLoader):
             return super(LinkNeighborLoader, self).filter_fn(out)
 
 
-
 def train(model, loader, optimizer, optimizer_sparse, criterion, epoch: int, device):
     model.train()
     total_loss = 0
@@ -128,33 +116,30 @@ def train(model, loader, optimizer, optimizer_sparse, criterion, epoch: int, dev
         z = model(x, data.edge_index.to(device)
                   # data.edge_attr.to(device)
                   )
-        
-        
+
         # neg_edge_index = negative_sampling(
         #     edge_index=data.edge_index.to(device),
         #     num_nodes=data.num_nodes,
         #     num_neg_samples=data.edge_index.size(1),
         #     method='sparse').to(device)
 
-        neg_edge_index = torch.stack([data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
-
+        neg_edge_index = torch.stack(
+            [data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
 
         edge_label = torch.cat([
             torch.ones(data.edge_index.shape[1], device=device),
             torch.zeros(data.edge_index.shape[1], device=device)
         ], dim=0)
-        
+
         out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index.to(device)], axis=1))
-        
+
         loss = criterion(out, edge_label)
         total_loss += loss.item()
-        
 
         loss.backward()
         optimizer.step()
         optimizer_sparse.step()
 
-    
     return total_loss
 
 
@@ -163,26 +148,27 @@ def evaluate(model, loader, criterion, device):
     model.eval()
     total_loss = 0
     y_true, y_pred = [], []
-    
+
     node_embeddings = torch.zeros((model.num_nodes, model.embed_dim), dtype=torch.float32).to(device)
 
     with torch.no_grad():
         for data in tqdm(loader, desc="Evaluating"):
             x = model.embedding(data.node.to(device))
             z = model(x, data.edge_index.to(device))
-            
+
             node_embeddings[data.node] = x.clone()
-            
+
             # neg_edge_index = negative_sampling(
             #     edge_index=data.edge_index.to(device),
             #     num_nodes=data.num_nodes,
             #     num_neg_samples=data.edge_index.size(1),
             #     method='sparse').to(device)
-            
-            neg_edge_index = torch.stack([data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
-            
+
+            neg_edge_index = torch.stack(
+                [data.edge_index[0], torch.randint(0, data.num_nodes, (data.edge_index.shape[1],))])
+
             out = model.decode(z, torch.concat([data.edge_index.to(device), neg_edge_index.to(device)], axis=1))
-            
+
             edge_label = torch.cat([
                 torch.ones(data.edge_index.shape[1], device=device),
                 torch.zeros(data.edge_index.shape[1], device=device)
@@ -203,21 +189,21 @@ def evaluate(model, loader, criterion, device):
 if __name__ == "__main__":
     project_setup()
     args = parse_args()
-    
+
     path_graph = osp.join(args.output_dir, f'{args.feature_name}_edges.parquet')
-    
+
     edge_df = pd.read_parquet(path_graph)
-    
+
     for year in trange(args.start_year, args.end_year):
         if year == 1994:
             edges = edge_df.query("published_year >= 1985 and published_year < 1995")
 
         else:
             edges = edge_df.query(f"published_year == {year}")
-            
+
         edge_counts = edges.groupby([const.SOURCE, const.DESTINATION]).size().reset_index()
         edge_counts.rename(columns={0: 'weight'}, inplace=True)
-        
+
         # Step 1: Create a unique node list
         unique_nodes = pd.concat([edges[const.SOURCE], edges[const.DESTINATION]]).unique()
 
@@ -227,58 +213,53 @@ if __name__ == "__main__":
         # Step 3: Apply the mapping to the source and destination columns
         # edge_counts[const.SOURCE] = edge_counts[const.SOURCE].map(node_mapping)
         # edge_counts[const.DESTINATION] = edge_counts[const.DESTINATION].map(node_mapping)
-        
-        
 
         # Convert to PyTorch Geometric graph
         src = torch.tensor(edges[const.SOURCE].map(node_mapping).values, dtype=torch.long)
         dst = torch.tensor(edges[const.DESTINATION].map(node_mapping).values, dtype=torch.long)
         edge_index = torch.stack([src, dst], dim=0)
         # weights = torch.tensor(edge_counts['weight'].values, dtype=torch.float)
-        
-        full_data = Data(x=None, edge_index=to_undirected(edge_index) # , edge_attr=weights
+
+        full_data = Data(x=None, edge_index=to_undirected(edge_index)  # , edge_attr=weights
                          )
 
         # Set up model
         model = Net(len(node_mapping), 128, args.embed_dim, device=args.device)
         model.to(args.device)
-        
+
         optimizer = torch.optim.Adam(
             params=[p for n, p in model.named_parameters() if
                     "embedding" not in n],
-            lr=0.003)
+            lr=args.lr)
         optimizer_sparse = torch.optim.SparseAdam(
             params=[p for n, p in model.named_parameters() if "embedding" in n],
-            lr=0.003)
+            lr=args.lr)
         criterion = torch.nn.BCEWithLogitsLoss()
 
-        train_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=True)
-        eval_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=False)
-        
+        train_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size,
+                                               shuffle=True)
+        eval_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size,
+                                              shuffle=False)
+
         for epoch in trange(args.epochs, desc=f"Training {year}", position=0, leave=True):
             loss = train(model, train_loader, optimizer, optimizer_sparse, criterion, epoch, args.device)
-            print(f'Epoch: {epoch+1}, Loss: {loss:.4f}')
-            
+            print(f'Epoch: {epoch + 1}, Loss: {loss:.4f}')
+
             if epoch == 0 or (epoch + 1) % args.save_every == 0:
-        
+
                 loss, roc_auc, node_embeddings = evaluate(model, eval_loader, criterion, args.device)
                 print(f'Evaluation Loss: {loss:.4f}, ROC AUC: {roc_auc:.4f}')
-                
-                embed_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN, f"{const.GCN}_embeds_{year}.pkl")
-                
+
+                embed_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN,
+                                      f"{const.GCN}_embeds_{year}.pkl")
+
                 os.makedirs(osp.dirname(embed_path), exist_ok=True)
-                
+
                 # Save the embeddings
                 if epoch + 1 >= (args.epochs):
                     with open(embed_path, "wb") as f:
                         pickle.dump({"embed": node_embeddings.cpu(),
-                                    "node_mapping": node_mapping,
-                                    }, f)
-                    
-                    
-                
-                
-                
+                                     "node_mapping": node_mapping,
+                                     }, f)
+
         # Retrieve the node embeddings
-        
-            

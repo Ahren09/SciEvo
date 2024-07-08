@@ -14,12 +14,12 @@ from collections import defaultdict
 sys.path.append(os.path.abspath('.'))
 
 from utility.graph_utils import create_simple_graph_from_multigraph
-from utility.utils_data import load_arXiv_data
+from utility.utils_data import load_arXiv_data, load_keywords
 from arguments import parse_args
 from utility.utils_misc import project_setup
 
 
-def build_hypergraph(papers, backend="networkx"):
+def build_hypergraph(keywords, backend="networkx"):
 
     assert backend in ["networkx", "rapids"]
 
@@ -27,8 +27,8 @@ def build_hypergraph(papers, backend="networkx"):
     edge_list = []
     
     
-    for index_paper, (arxiv_url, keywords) in enumerate(tqdm(papers.items())):
-        keywords = keywords.split(", ")
+    for index_paper, (arxiv_url, keywords) in enumerate(tqdm(keywords.items())):
+        keywords = [k.strip() for k in keywords.split(",")]
         # Add edges between every pair of keywords to form a clique
         
         published = arxiv_data.loc[arxiv_url, "published"]
@@ -55,10 +55,9 @@ if __name__ == "__main__":
         arxiv_data = load_arXiv_data(args.data_dir).set_index("id")
         
 
-        with open(path, "r") as f:
-            papers = json.load(f)
+        keywords = load_keywords(args.data_dir, args.feature_name)
 
-        edge_df = build_hypergraph(papers, backend=args.graph_backend)
+        edge_df = build_hypergraph(keywords, backend=args.graph_backend)
         print("Saving hypergraph edges to parquet file")
         
         

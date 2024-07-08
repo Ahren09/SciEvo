@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=50, help="Number of epochs")
     parser.add_argument('--embed_dim', type=int, default=100, help="Dimension of the generated embeddings.")
     parser.add_argument('--graph_backend', type=str, default="networkx", choices=["networkx", "rapids"], help="Dimension of the hidden layer.")
-    parser.add_argument('--lr', type=float, default=1e-3)
+    parser.add_argument('--lr', type=float, default=1e-2)
     parser.add_argument('--model_name', type=str, choices=[const.WORD2VEC, const.GCN],  default=const.GCN)
     parser.add_argument('--num_workers', type=int, default=16,
                         help="Number of processes")
@@ -43,6 +43,8 @@ def parse_args():
                                                                        "cache. ")
     parser.add_argument('--step_size', type=int, help="Step size for the scheduler", default=50)
 
+    parser.add_argument('--seed', type=int, help="Step size for the scheduler", default=42)
+
     parser.add_argument('--feature_name', type=str, choices=["title", "abstract", "title_and_abstract"],
                         default='title')
     parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='llm_extracted_keyword')
@@ -50,7 +52,7 @@ def parse_args():
     parser.add_argument('--graphistry_personal_key_secret', type=str, default='')
 
     parser.add_argument('--min_occurrences', type=int, help="Minimum number of times a keyword needs to appear in the corpus",
-                        default=5)
+                        default=3)
 
     args = parser.parse_args()
 
