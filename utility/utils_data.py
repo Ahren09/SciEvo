@@ -94,7 +94,15 @@ def load_keywords(data_dir: str, attribute: str):
 
     with open(path, "r") as f:
         keywords = json.load(f)
-    keywords = {k: [keyword.lower().strip() for keyword in v.split(",")] for k, v in keywords.items()}
+
+    entries = []
+    arxiv_data = load_arXiv_data(data_dir)
+
+    for k, v in tqdm(keywords.items()):
+        entries.append((k, [keyword.lower().strip() for keyword in v.split(",")]))
+    keywords = pd.DataFrame(entries, columns=["id", "keywords"]).set_index("id")
+    keywords = keywords.join(arxiv_data[['id', 'published']].set_index("id"))
+
     return keywords
 
 

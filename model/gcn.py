@@ -205,6 +205,7 @@ if __name__ == "__main__":
     args = parse_args()
     
     path_graph = osp.join(args.output_dir, f'{args.feature_name}_edges.parquet')
+
     
     edge_df = pd.read_parquet(path_graph)
     
@@ -246,10 +247,10 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(
             params=[p for n, p in model.named_parameters() if
                     "embedding" not in n],
-            lr=0.003)
+            lr=args.lr)
         optimizer_sparse = torch.optim.SparseAdam(
             params=[p for n, p in model.named_parameters() if "embedding" in n],
-            lr=0.003)
+            lr=args.lr)
         criterion = torch.nn.BCEWithLogitsLoss()
 
         train_loader = ArXivLinkNeighborLoader(full_data, num_neighbors=[10, 10], batch_size=args.batch_size, shuffle=True)

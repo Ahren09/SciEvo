@@ -54,11 +54,15 @@ def procrustes_align(base_embed, other_embed, common_words):
     m = basevecs.T.dot(othervecs)
     u, _, vh = np.linalg.svd(m)
     ortho = u.dot(vh)
-    fixedvecs = othervecs.dot(ortho)
+    # fixedvecs = othervecs.dot(ortho)
 
+    # Apply transformation to all words in the embeddings to be aligned
+    transformed_othervecs = other_embed.m - np.mean(other_embed.m[other_indices], axis=0)
+    transformed_othervecs = transformed_othervecs.dot(ortho)
 
-    return Embedding(fixedvecs, [other_embed.iw[i] for i in other_indices])
-
+    # Re-introduce the mean of the base vectors (seems not needed )
+    # transformed_othervecs += np.mean(basevecs, axis=0)
+    return Embedding(transformed_othervecs, other_embed.iw)
 
 if __name__ == "__main__":
 
