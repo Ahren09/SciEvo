@@ -25,35 +25,19 @@ def load_arXiv_data(data_dir: str, subset: str = None, start_year: int = None, s
     """
 
     t0 = time.time()
-    if subset is None:
-        # Load the full dataset
-        data = pd.read_parquet(osp.join(data_dir, "NLP", "arXiv", "arXiv_metadata.parquet"))
 
-        data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True)
+    data = pd.read_parquet(osp.join(data_dir, "NLP", "arXiv", "arXiv_metadata.parquet"))
 
-        if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
+    data[const.PUBLISHED] = pd.to_datetime(data[const.PUBLISHED], utc=True)
 
-            start_time = datetime.datetime(start_year, start_month, 1, tzinfo=pytz.utc)
-            end_time = datetime.datetime(end_year, end_month, 1, tzinfo=pytz.utc)
+    if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
 
-            data = data[(data[const.PUBLISHED] >= start_time) & (data[const.PUBLISHED] < end_time)].reset_index(drop=True)
+        start_time = datetime.datetime(start_year, start_month, 1, tzinfo=pytz.utc)
+        end_time = datetime.datetime(end_year, end_month, 1, tzinfo=pytz.utc)
 
+        data = data[(data[const.PUBLISHED] >= start_time) & (data[const.PUBLISHED] < end_time)].reset_index(drop=True)
 
-
-
-    else:
-        if subset == "first_100":
-            path = osp.join(data_dir, "arXiv_metadata_first_100_entries.xlsx")
-
-        elif subset == "last_100":
-            path = osp.join(data_dir, "arXiv_metadata_last_100_entries.xlsx")
-
-        else:
-            raise ValueError(f"subset {subset} not recognized")
-
-        data = pd.read_excel(path)
-
-    print(f"Loaded {len(data)} entries in {(time.time() - t0):.3f} secs.")
+    print(f"Loaded {len(data)} arXiv papers in {(time.time() - t0):.3f} secs.")
 
     data['title'].fillna("", inplace=True)
     data['summary'].fillna("", inplace=True)
