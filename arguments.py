@@ -20,6 +20,7 @@ def parse_args():
                         default="data",
                         help="Location to store the processed dataset")
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--do_plotly', action='store_true')
     parser.add_argument('--device', type=str, default="cuda")
     parser.add_argument('--do_visual', action='store_true',
                         help="Whether to do visualization")
@@ -45,7 +46,8 @@ def parse_args():
 
     parser.add_argument('--seed', type=int, help="Step size for the scheduler", default=42)
 
-    parser.add_argument('--feature_name', type=str, choices=["title", "abstract", "title_and_abstract"],
+    parser.add_argument('--feature_name', type=str, choices=["title", "abstract",
+                                                             "title_and_abstract"],
                         default='title')
     parser.add_argument('--tokenization_mode', type=str, choices=["unigram", "llm_extracted_keyword"], default='llm_extracted_keyword')
     parser.add_argument('--graphistry_personal_key_id', type=str, default='')

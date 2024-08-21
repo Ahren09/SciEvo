@@ -4,8 +4,8 @@
 /src/.idea/
 gradio_cached_examples
 checkpoints/
-notebooks
 keys.py
+demo*
 
 # Output and data files
 ./Data

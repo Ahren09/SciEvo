@@ -78,7 +78,7 @@ def main():
 
 
 
-    # Add axis labels and title
+    # Add axis labels and title_llm_extracted_keyword
     ax.set_xlabel('Time')
     ax.set_ylabel('#Papers')
     ax.set_title('#Monthly Submitted Papers by Subject')
@@ -106,7 +106,7 @@ def main():
 
 
     # sns.ecdfplot(data=df_melted, x='submissions', hue='category')
-    # plt.title('ECDF of New Submissions')
+    # plt.title_llm_extracted_keyword('ECDF of New Submissions')
     # plt.show()
     # col1 = col2
 

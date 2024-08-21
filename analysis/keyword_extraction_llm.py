@@ -48,7 +48,7 @@ def main():
 
     args = parse_args()
 
-    if args.feature_name == "title":
+    if args.feature_name == "title_llm_extracted_keyword":
         num_keywords = 3
     else:
         num_keywords = 15
@@ -75,13 +75,13 @@ def main():
 
         for i, row in arxiv_data.iterrows():
 
-            if args.feature_name == "title":
+            if args.feature_name == "title_llm_extracted_keyword":
 
-                docs.append(Document(text=f'{row["title"]}', metadata={"arxiv_id": row["id"]}))
+                docs.append(Document(text=f'{row["title_llm_extracted_keyword"]}', metadata={"arxiv_id": row["id"]}))
 
-            elif args.feature_name == "title_and_abstract":
-                docs.append(Document(text=f'{row["title"]}\n{row["summary"]}', metadata={"arxiv_id": row["id"],
-                                                                                       "file_name": f"{row['title']}",
+            elif args.feature_name == "title_and_abstract_llm_extracted_keyword":
+                docs.append(Document(text=f'{row["title_llm_extracted_keyword"]}\n{row["summary"]}', metadata={"arxiv_id": row["id"],
+                                                                                       "file_name": f"{row['title_llm_extracted_keyword']}",
                                                                 "page_label": 0}))
 
             else:

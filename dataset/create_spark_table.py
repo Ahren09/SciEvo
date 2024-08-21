@@ -1,4 +1,8 @@
 """
+ARCHIVED
+
+Create a Spark table and query with tags
+
 Follow [this page](https://spark.apache.org/docs/3.5.0/api/python/getting_started/install.html) to
 install PySpark on your system.
 
@@ -41,7 +45,7 @@ def create_or_load_spark_dataframe(args):
 
         schema = StructType([
             StructField("id", StringType(), True),
-            StructField("title", StringType(), True),
+            StructField("title_llm_extracted_keyword", StringType(), True),
             StructField("summary", StringType(), True),
             StructField("arxiv_comment", StringType(), True),
             StructField("published", TimestampType(), True),  # Specify TimestampType for "published"

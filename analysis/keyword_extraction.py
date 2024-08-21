@@ -1,5 +1,7 @@
 """
-This script performs keyword extraction from the arXiv dataset.
+ARCHIVED
+
+This script performs keyword extraction from the arXiv dataset using ngrams and Rake.
 
 Requirements: `conda install -c conda-forge rake_nltk`
 """
@@ -123,7 +125,7 @@ def extract_keywords_for_row(tup):
     d = {}
 
     for col_name, col_data in {
-        "title": ["title_keywords", "title_unigrams"],
+        "title_llm_extracted_keyword": ["title_keywords", "title_unigrams"],
         "summary": ["abstract_keywords", "abstract_unigrams"]
     }.items():
         keywords, unigrams = extract_keywords_spacy(row[col_name])
@@ -314,8 +316,6 @@ if __name__ == "__main__":
 
     semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
 
-    # semantic_scholar_data.explode(const.FOS)["paperId"]
-
     if args.debug:
         data = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
 
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     # all_abstract_words = extract_unigrams_from_abstract()
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)
 
-    for col in ["title", "summary"]:
+    for col in ["title_llm_extracted_keyword", "summary"]:
         feature_list = get_titles_or_abstracts_as_list(data, col)
         tokens = extract_words(feature_list)
         json.dump(tokens, open(osp.join(args.output_dir, f"{col}_tokens.json"), "w"), indent=2)
@@ -348,17 +348,3 @@ if __name__ == "__main__":
     exit(0)
 
     # For each subject and each example, match the extracted keywords with the subject keywords
-
-    if args.num_workers == 1:
-        d_list = [extract_keywords_for_row((idx_row, row)) for idx_row, row in
-                  tqdm(data.iterrows(), desc="Extract keywords", total=len(data))]
-    else:
-        d_list = process_rows(data, num_workers=args.num_workers)
-
-    keywords_df = pd.DataFrame(d_list)
-    keywords_df['updated_datetime'] = pd.to_datetime(keywords_df[const.UPDATED], utc=True)
-    keywords_df = keywords_df.sort_values(by=['updated_datetime'], ascending=False)
-    keywords_df.drop(columns=['updated_datetime'], inplace=True)
-    keywords_df.to_pickle(osp.join(args.data_dir, "Sample_keywords.pkl"))
-
-    print("Done!")

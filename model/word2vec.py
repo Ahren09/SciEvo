@@ -179,7 +179,9 @@ def main():
 
         elif args.tokenization_mode == "llm_extracted_keyword":
 
-            tokenized_docs = [all_keywords[id] for id in snapshot_paper_ids if id in all_keywords]
+            tokenized_docs = all_keywords.loc[all_keywords.index.isin(snapshot_paper_ids)]
+
+            tokenized_docs = tokenized_docs['keywords'].tolist()
 
         else:
             raise ValueError(f"Tokenization mode {args.tokenization_mode} not recognized")
@@ -205,7 +207,8 @@ def main():
                 print(f"\t{word}: {similarity:.4f}")
 
         if args.save_model:
-            filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
+            # filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
+            filename = f"word2vec_{start.year}.model"
             print(f"Saving model to {filename}")
             model.save(osp.join(model_path, filename))
 

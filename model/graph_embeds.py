@@ -9,8 +9,7 @@ from utility.utils_misc import project_setup
 
 def main():
     # Initialize and train a CountVectorizer with some sample data
-    vectorizer = CountVectorizer(ngram_range=(1, 4), min_df=5, stop_
-    s='english')
+    vectorizer = CountVectorizer(ngram_range=(1, 4), min_df=5, stop_words='english')
     df = load_arXiv_data(args.data_dir)
 
     # New document

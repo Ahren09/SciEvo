@@ -1,4 +1,13 @@
+"""
+Compute the trajectories of keywords through temporal analysis
+
+First run `get_keyword_trajectory_coords.py` to generate the coordinates
+Then run `plot_keyword_traj.py` to visualize the trajectories
+
+"""
+
 import datetime
+import os
 import os.path as osp
 import pickle
 from collections import defaultdict
@@ -74,8 +83,12 @@ if __name__ == "__main__":
     if args.model_name == "word2vec":
         base_embed_filename = f"{args.model_name}_{base_embed_start_timestamp.strftime(const.format_string)}-" \
                               f"{(base_embed_start_timestamp + relativedelta(years=1)).strftime(const.format_string)}.model"
+
+        base_embed_filename = f"{args.model_name}_{base_embed_start_timestamp.year}.model"
+
+
         base_embed = Word2Vec.load(
-            osp.join(args.checkpoint_dir, args.feature_name, const.WORD2VEC, base_embed_filename))
+            osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.WORD2VEC, base_embed_filename))
 
         base_embed = Embedding(base_embed.wv.vectors, base_embed.wv.index_to_key, normalize=True)
 
@@ -107,10 +120,8 @@ if __name__ == "__main__":
 
         if args.model_name == const.WORD2VEC:
 
-            model_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN,
-                                  const.GCN,
-                                  f"_"
-                                  f"_embeds_{start.year}.pkl")
+            model_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", args.model_name,
+                                  f"{args.model_name}_{start.year}.model")
 
             get_file_times(model_path)
 
@@ -121,7 +132,7 @@ if __name__ == "__main__":
         elif args.model_name == const.GCN:
 
             model_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", args.model_name,
-                                  f"{args.model_name}_embeds_{start.year}.pkl")
+                                  f"{args.model_name}_{start.year}.pkl")
 
             with open(model_path, "rb") as f:
                 d = pickle.load(f)
@@ -165,7 +176,7 @@ if __name__ == "__main__":
             closest_words_and_similarity:
             [
                 (similarity1, word1), # The 1st entry corresponds to word1 itself
-                (similarity2, word2), 
+                (similarity2, word2), # The 2nd entry is the most similar word to word1
                 ...
             ]
             """
@@ -197,6 +208,9 @@ if __name__ == "__main__":
         embed_previous_year = embed
         words_previous_year = words_current_year
 
+
+
+
     visualization_model = TSNE(initialization="pca", n_components=2, perplexity=30, metric="cosine", n_iter=300,
                                verbose=True)
     # valid_words_mask_base should be all `True`
@@ -205,6 +219,8 @@ if __name__ == "__main__":
     # Convert embedding_train and words list into a DataFrame
     background_df = pd.DataFrame(embedding_train, columns=['x', 'y'])
     background_df['word'] = np.array(base_embed.iw)[valid_words_mask_base]
+
+
 
     trajectories = []
     for word in highlighted_words_embed_dict:
@@ -235,6 +251,56 @@ if __name__ == "__main__":
             })
 
     trajectories_df = pd.DataFrame(trajectories)
+
+    # Create a Plotly scatter plot for better interactivity
+    if args.do_plotly:
+        import plotly.graph_objs as go
+        import plotly.express as px
+
+        # Only display nearest neighbors in the background
+        background_mask = background_df.word.isin(nearest_neighbors)
+
+        scatter = go.Scatter(
+            x=background_df[background_mask]['x'].values,
+            y=background_df[background_mask]['y'].values,
+            mode='markers',
+            marker=dict(size=10, color='blue'),
+            name='Scatter',
+            text=background_df['word'],  # Add the words as hover text
+            hoverinfo='text'  # Display only the hover text
+        )
+
+        plotly_trajectories = []
+
+        for word in highlighted_words:
+
+            traj = trajectories_df[trajectories_df['word'] == "decision making"].reset_index(drop=True)
+
+            line = go.Scatter(
+                x=traj['x'],
+                y=traj['y'],
+                mode='lines',
+                line=dict(color='green'),
+                name=word,
+                text=[f'{word} ({year})' for year in traj['year']],
+                hoverinfo="text"
+            )
+            plotly_trajectories += [line]
+
+        # Combine the scatter plot and line plots into a single figure
+        fig = go.Figure(data=[scatter] + plotly_trajectories)
+
+        # Update layout for better visibility
+        fig.update_layout(
+            title="Scatter Plot with Line Plots",
+            xaxis_title="X Axis",
+            yaxis_title="Y Axis"
+        )
+
+        fig.write_html("scatter_with_lines.html")
+
+
+
     with pd.ExcelWriter(osp.join(args.output_dir, f"keyword_trajectories.xlsx")) as writer:
         trajectories_df.to_excel(writer, sheet_name="trajectories", index=False)
         background_df.to_excel(writer, sheet_name="background", index=False)
