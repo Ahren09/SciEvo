@@ -1,3 +1,7 @@
+"""
+Updated: 2024.8.25
+"""
+
 import os
 import os.path as osp
 import pickle
@@ -195,9 +199,12 @@ if __name__ == "__main__":
     
     edge_df = pd.read_parquet(path_graph)
 
-    for year in trange(args.start_year, args.end_year):
-        if year == 1994:
+    year = args.start_year
+    while year <= args.end_year:
+
+        if year <= 1994:
             edges = edge_df.query("published_year >= 1985 and published_year < 1995")
+            year = 1994
 
         else:
             edges = edge_df.query(f"published_year == {year}")
@@ -262,5 +269,7 @@ if __name__ == "__main__":
                         pickle.dump({"embed": node_embeddings.cpu(),
                                      "node_mapping": node_mapping,
                                      }, f)
+
+        year += 1
 
         # Retrieve the node embeddings
