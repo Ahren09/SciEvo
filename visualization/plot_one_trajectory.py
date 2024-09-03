@@ -1,9 +1,7 @@
 """
-Compute the trajectories of keywords through temporal analysis
+Date: 2024-09-01
 
-First run `get_keyword_trajectory_coords.py` to generate the coordinates
-Then run `plot_keyword_traj.py` to visualize the trajectories
-
+Compute one trajectory at a time
 """
 
 import datetime
@@ -54,15 +52,7 @@ if __name__ == "__main__":
     highlighted_words_embed_dict = defaultdict(dict)
 
     # We plot the trajectories of these words over time
-    highlighted_words = ["artificial intelligence", "machine learning", "deep learning", "natural language "
-                                                                                         "processing", "nlp",
-                         "optimization",
-                         "large language "
-                         "models",
-                         "llm", "language model", "attention", "neural networks", "transformer", "transformers", "bias",
-                         "covid",
-                         "covid-19", "sars-cov-2",
-                         "quantum computing", "quantum", "gravitational waves", "decision making", "decision"]
+    highlighted_words = ["covid-19", "sars-cov-2"]
     nearest_neighbors = set()
 
     iterator = TimeIterator(args.start_year, args.end_year, start_month=1, end_month=1, snapshot_type='yearly')
@@ -266,10 +256,7 @@ if __name__ == "__main__":
         import plotly.express as px
 
         # Only display nearest neighbors in the background
-        # background_mask = background_df.word.isin(nearest_neighbors)
-
-        # Plot all words
-        background_mask = np.array([True for _ in range(background_df.shape[0])])
+        background_mask = background_df.word.isin(nearest_neighbors)
 
         scatter = go.Scatter(
             x=background_df[background_mask]['x'].values,
@@ -308,7 +295,7 @@ if __name__ == "__main__":
             yaxis_title="Y Axis"
         )
 
-        fig.write_html("outputs/visual/scatter_with_lines.html")
+        fig.write_html("scatter_with_lines.html")
 
 
 

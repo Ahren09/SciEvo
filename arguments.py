@@ -13,6 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="")
     # Parameters for Analysis
 
+    parser.add_argument('--base_year', type=int, default=2023)
     parser.add_argument('--batch_size', type=int, default=256,
                         help="the batch size for models")
     parser.add_argument('--checkpoint_dir', type=str, default="checkpoints")
