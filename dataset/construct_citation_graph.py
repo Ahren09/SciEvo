@@ -32,24 +32,10 @@ for (start, end) in [(1990, 2004), (2005, 2010), (2011, 2015)]:
 
 print(f'Done: edges {start} -- {end}')
 
-edges_2016 = pd.read_parquet('semantic_scholar/references_2016.parquet')
-print('Done: edges_2016')
-edges_2017 = pd.read_parquet('semantic_scholar/references_2017.parquet')
-print('Done: edges_2017')
-edges_2018 = pd.read_parquet('semantic_scholar/references_2018.parquet')
-print('Done: edges_2018')
-edges_2019 = pd.read_parquet('semantic_scholar/references_2019.parquet')
-print('Done: edges_2019')
-edges_2020 = pd.read_parquet('semantic_scholar/references_2020.parquet')
-print('Done: edges_2020')
-edges_2021 = pd.read_parquet('semantic_scholar/references_2021.parquet')
-print('Done: edges_2021')
-edges_2022 = pd.read_parquet('semantic_scholar/references_2022.parquet')
-print('Done: edges_2022')
-edges_2023 = pd.read_parquet('semantic_scholar/references_2023.parquet')
-print('Done: edges_2023')
-edges_2024 = pd.read_parquet('semantic_scholar/references_2024.parquet')
-print('Done: edges_2024')
+for year in range(2016, 2025):
+    edges = pd.read_parquet(f'semantic_scholar/references_{year}.parquet')
+    all_edges += [edges]
+
 
 arxiv_meta = pd.read_parquet('arXiv/arXiv_metadata.parquet')
 
