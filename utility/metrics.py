@@ -1,3 +1,4 @@
+import traceback
 from collections import Counter
 from typing import Dict, List, Union
 
@@ -6,26 +7,67 @@ import numpy as np
 import const
 
 
-def gini(x):
-    total = 0
-    for i, xi in enumerate(x[:-1], 1):
-        total += np.sum(np.abs(xi - x[i:]))
-    return total / (len(x) ** 2 * np.mean(x))
+def gini(proportions):
+    try:
+        if isinstance(proportions, dict):
+            proportions = np.array(list(proportions.values()))
+            proportions = proportions[proportions != None]
+
+        total = 0
+        for i, xi in enumerate(proportions[:-1], 1):
+            total += np.sum(np.abs(xi - proportions[i:]))
+        return total / (len(proportions) ** 2 * np.mean(proportions))
+
+    except:
+        traceback.print_exc()
+        return None
 
 
 def simpsons_diversity_index(proportions):
     """Calculate Simpson's Diversity Index, a.k.a. Gini-Simpson Index."""
-    return 1 - np.sum(proportions ** 2)
+    if isinstance(proportions, dict):
+        proportions = np.array(list(proportions.values()))
+        proportions = proportions[proportions != None]
+
+    if len(proportions) >= 1:
+        return 1 - np.sum(proportions ** 2)
+    else:
+        return None
 
 
 def shannons_diversity_index(proportions):
     """Calculate Shannon's Diversity Index."""
-    return -np.sum(proportions * np.log(proportions + 1e-10))  # adding small value to avoid log(0)
+
+    try:
+        if isinstance(proportions, dict):
+            proportions = np.array(list(proportions.values()))
+            proportions = proportions[proportions != None]
+
+        if len(proportions) >= 1:
+            proportions = proportions.astype(float)
+            return -np.sum(proportions * np.log(proportions + 1e-10))  # adding small value to avoid log(0)
+
+        else:
+            return None
+
+    except:
+        traceback.print_exc()
+        return None
+
 
 
 def gini_simpson_index(proportions):
     """Calculate Gini-Simpson Index."""
-    return np.sum(proportions * (1 - proportions))
+
+    if isinstance(proportions, dict):
+        proportions = np.array(list(proportions.values()))
+        proportions = proportions[proportions != None]
+
+    if len(proportions) >= 1:
+        return np.sum(proportions * (1 - proportions))
+
+    else:
+        return None
 
 
 def herfindahl_hirschman_index(proportions):

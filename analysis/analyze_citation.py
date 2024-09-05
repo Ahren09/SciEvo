@@ -11,7 +11,8 @@ from tqdm import tqdm
 
 import const
 from arguments import parse_args
-from utility.metrics import calculate_citation_diversity
+from utility.metrics import (calculate_citation_diversity, simpsons_diversity_index, shannons_diversity_index,
+                             gini_simpson_index, gini)
 from utility.utils_data import load_semantic_scholar_papers, \
     load_semantic_scholar_references_parquet, load_keywords, load_arXiv_data
 from utility.utils_misc import project_setup
@@ -49,8 +50,10 @@ if __name__ == "__main__":
 
     arxiv_data = load_arXiv_data(args.data_dir)
 
-    arxiv_data[f'{args.feature_name}_keywords'] = arxiv_data[f'{args.feature_name}_keywords'].apply(
-                    lambda x: set([paper_kwd.strip() for paper_kwd in x.lower().split(',')]))
+    for feature_name in ['title', 'title_and_abstract']:
+        arxiv_data[f'{feature_name}_keywords'] = arxiv_data[f'{feature_name}_keywords'].apply(
+            lambda x: x if isinstance(x, (set, list)) else set(
+                [paper_kwd.strip() for paper_kwd in x.lower().split(',')]))
 
     path_mask = os.path.join(args.data_dir, "NLP", "arXiv", "topic_mask.parquet")
 
@@ -110,8 +113,8 @@ if __name__ == "__main__":
     # Set the timezone once
     timezone = pytz.timezone('UTC')
 
-    years = [1990, 2005, 2010] + list(np.arange(2011, 2025))
-    print("TODO: years")
+    years = [1990, 2005, 2011] + list(np.arange(2016, 2025))
+
     # years = list(np.arange(2023, 2025))
 
     def calculate_topical_diversity(references):
@@ -170,89 +173,129 @@ if __name__ == "__main__":
 
         return age_of_citations_one_paper
 
-
-    age_of_citations, citation_diversity = {}, {}
-
     # Count the age of citation for each of the 2 million papers
     # Count the ratio of citations
-    for year in years:
-        references_one_snapshot = load_semantic_scholar_references_parquet(args.data_dir, year)
+
+    path_citation_age_and_diversity = os.path.join(args.data_dir, "NLP", "arXiv", "citation_age_and_diversity.parquet")
+
+    if os.path.exists(path_citation_age_and_diversity):
+        result = pd.read_parquet(path_citation_age_and_diversity)
+
+    else:
+
+        age_of_citations, citation_diversity = {}, {}
+
+        for year in years:
+            references_one_snapshot = load_semantic_scholar_references_parquet(args.data_dir, year)
 
 
 
-        total_age = 0
-        count = 0
-        # Convert arXivId to Categorical if it has limited unique values
-        references_one_snapshot['arXivId'] = references_one_snapshot['arXivId'].astype('category')
+            total_age = 0
+            count = 0
+            # Convert arXivId to Categorical if it has limited unique values
+            references_one_snapshot['arXivId'] = references_one_snapshot['arXivId'].astype('category')
 
-        # Iterate through each paper
-        for index_row, reference_one_paper in tqdm(references_one_snapshot.iterrows(), desc=f"References "
-                                                                                                     f"Year={year}",
-                                                   total=len(references_one_snapshot)):
+            # Iterate through each paper
+            for index_row, reference_one_paper in tqdm(references_one_snapshot.iterrows(), desc=f"References "
+                                                                                                         f"Year={year}",
+                                                       total=len(references_one_snapshot)):
 
-            references = reference_one_paper['references']
-            citation_diversity[reference_one_paper['arXivId']] = calculate_topical_diversity(references)
-
-
-            age_of_citations_one_paper = calculate_age_of_citations(reference_one_paper)
-
-            if len(age_of_citations_one_paper) > 0:
-                age_of_citations[reference_one_paper['arXivId']] = age_of_citations_one_paper
-
-    # Convert Series to DataFrames
-    citation_diversity = pd.Series(citation_diversity).to_frame(name='diversity')
-    age_of_citations = pd.Series(age_of_citations).to_frame(name='aoc')
+                references = reference_one_paper['references']
+                citation_diversity[reference_one_paper['arXivId']] = calculate_topical_diversity(references)
 
 
-    # Outer join using merge
-    result = pd.merge(citation_diversity, age_of_citations, left_index=True, right_index=True, how='outer')
+                age_of_citations_one_paper = calculate_age_of_citations(reference_one_paper)
 
-    result.to_parquet(os.path.join(args.data_dir, "NLP", "arXiv", "citation_age_and_diversity.parquet"))
+                if len(age_of_citations_one_paper) > 0:
+                    age_of_citations[reference_one_paper['arXivId']] = age_of_citations_one_paper
+
+        # Convert Series to DataFrames
+        citation_diversity = pd.Series(citation_diversity).to_frame(name='diversity')
+        age_of_citations = pd.Series(age_of_citations).to_frame(name='aoc')
+
+
+        # Outer join using merge
+        result = pd.merge(citation_diversity, age_of_citations, left_index=True, right_index=True, how='outer')
+
+        result['published'] = arxiv_data.set_index('arXivId').loc[list(set(result.index.tolist()) & set(arxiv_data[
+                                                                                                            'arXivId']
+                                                                                                        )), 'published']
+
+        result.to_parquet(path_citation_age_and_diversity)
 
 
 
     # Convert the relevant arXivId list to a set once before the loop
-    relevant_arxiv_ids = set(mask[mask['contains_keyword']]['arXivId'])
 
-    # Filter using the precomputed set of arXivIds
-    references_one_snapshot_filtered = references_one_snapshot[
-        references_one_snapshot['arXivId'].isin(relevant_arxiv_ids)
-    ]
+    aggregated_metrics = {}
 
-    print(f"Year={year}, #papers after filtering={len(references_one_snapshot_filtered)}")
 
-    age_of_citations_filtered = pd.Series(age_of_citations).to_frame("time_difference").reindex(
-        np.array(list(relevant_arxiv_ids)))
-    age_of_citations_filtered.dropna(inplace=True)
+    mAoC_by_month = {}
 
-    age_of_citations_filtered = pd.merge(age_of_citations_filtered.reset_index(), arxiv_data[[
-        "arXivId",
-                                                                                                        "published"]],
-                                left_on="index",
-                                right_on="arXivId", how='left')
+    print("TODO: rename columns")
 
-    # Ensure time_differences are lists of numbers
-    age_of_citations_filtered['time_differences'] = age_of_citations_filtered['time_differences'].apply(
-        lambda x: pd.Series(x).mean())
-
+    # ------------------------------
+    # Temporal Diversity
     # Extract the year-month from the 'published' column
-    age_of_citations_filtered['year_month'] = age_of_citations_filtered['published'].dt.to_period('M')
+    result['published_year_month'] = result['published'].dt.to_period('M')
 
-    # Group by the 'year_month' and calculate the mean of 'time_differences'
-    mean_time_differences = age_of_citations_filtered.groupby('year_month')['time_differences'].mean()
-    # Convert the result back to a DataFrame if needed
-    mean_time_differences = mean_time_differences.reset_index()
+    for subject, topics in const.SUBJECT2KEYWORDS.items():
+        for topic, keywords in tqdm(topics.items(), desc=subject):
 
-    median_time_differences = age_of_citations_filtered.groupby('year_month')['time_differences'].median()
-    # Convert the result back to a DataFrame if needed
-    median_time_differences = median_time_differences.reset_index()
+            print(f"Calculating metrics for keyword={topic}")
+            relevant_arxiv_ids = set(mask_df[mask_df[topic]]['arXivId'])
+
+            relevant_arxiv_ids = list(relevant_arxiv_ids & set(result.index))
+
+            result_one_topic = result.loc[list(relevant_arxiv_ids)]
+            result_one_topic = result_one_topic[~result_one_topic['diversity'].isna()]
+            print(f"Topic={topic}, #papers={len(result_one_topic)}")
+
+            result_one_topic['simpson'] = result_one_topic['diversity'].apply(lambda x: simpsons_diversity_index(x))
+            result_one_topic['shannon'] = result_one_topic['diversity'].apply(lambda x: shannons_diversity_index(x))
+            result_one_topic['gini'] = result_one_topic['diversity'].apply(lambda x: gini(x))
+            result_one_topic['mean_aoc'] = result_one_topic['aoc'].apply(lambda x: np.mean(x) if isinstance(x, (np.ndarray, list)) else
+            None)
+            result_one_topic['std_aoc'] = result_one_topic['aoc'].apply(lambda x: np.std(x) if isinstance(x, (np.ndarray, list)) else None)
+            result_one_topic['median_aoc'] = result_one_topic['aoc'].apply(lambda x: np.median(x) if isinstance(x, (np.ndarray,
+                                                                                                 list)) else None)
+
+
+            # Change the topic names for better visualization
+            if " " in topic:
+                topic = " ".join([word.capitalize() for word in topic.split(' ')])
+
+
+            aggregated_metrics[topic] = {
+                'Simpson': result_one_topic['simpson'].mean(),
+                'Shannon': result_one_topic['shannon'].mean(),
+                'Gini': result_one_topic['gini'].mean(),
+                'Mean AoC': result_one_topic['mean_aoc'].mean(),
+                'Std AoC': result_one_topic['std_aoc'].mean(),
+                'Median AoC': result_one_topic['median_aoc'].mean()
+            }
+
+            mAoC_by_month[topic] = result_one_topic.groupby('published_year_month')['mean_aoc'].mean()
+
+
+    # Lowest mAoC comes first
+    aggregated_metrics_df = pd.DataFrame(aggregated_metrics).T.sort_values(by='mean_aoc', ascending=True)
+
+    aggregated_metrics_df.to_excel(os.path.join(args.output_dir, "stats", "aggregated_metrics.xlsx"))
+
+    df = aggregated_metrics_df[['Mean AoC', 'Std AoC', 'Median AoC']].sort_values(by='Mean AoC', ascending=True)
 
     # Plot the line plot
     plt.figure(figsize=(10, 6))
-    plt.plot(mean_time_differences['year_month'].astype(str), mean_time_differences['time_differences'], marker='o')
+
+    sns.lineplot()
+
+
+    plt.plot(result_one_topic['year_month'].astype(str), result_one_topic['mean_aoc'],
+             marker='o')
 
     # Set the y-axis to log scale
-    plt.yscale('log')
+    # plt.yscale('log')
 
     # Set the title and labels
     plt.title('Mean Time Differences Over Time')
@@ -264,6 +307,19 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+
+
+    age_of_citations_filtered = pd.merge(age_of_citations_filtered.reset_index(), arxiv_data[[
+        "arXivId",
+                                                                                                        "published"]],
+                                left_on="index",
+                                right_on="arXivId", how='left')
+
+    # Ensure time_differences are lists of numbers
+    age_of_citations_filtered['time_differences'] = age_of_citations_filtered['time_differences'].apply(
+        lambda x: pd.Series(x).mean())
+
+
 
 
     # ------------------------------

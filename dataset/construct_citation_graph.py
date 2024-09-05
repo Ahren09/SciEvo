@@ -32,8 +32,6 @@ for (start, end) in [(1990, 2004), (2005, 2010), (2011, 2015)]:
 
 print(f'Done: edges {start} -- {end}')
 
-edges_2015 = pd.read_parquet('semantic_scholar/references_2015.parquet')
-print('Done: edges_2015')
 edges_2016 = pd.read_parquet('semantic_scholar/references_2016.parquet')
 print('Done: edges_2016')
 edges_2017 = pd.read_parquet('semantic_scholar/references_2017.parquet')
@@ -66,7 +64,7 @@ print(arxiv_meta.iloc[0])
 
 # Convert dataframes to a single list of edges
 all_edges = []
-for edge_list in [edges_1990_2004, edges_2005_2010, edges_2011_2015, edges_2015, edges_2016, edges_2017, edges_2018, edges_2019, edges_2020, edges_2021, edges_2022, edges_2023, edges_2024]:
+for edge_list in [edges_1990_2004, edges_2005_2010, edges_2011_2015, edges_2016, edges_2017, edges_2018, edges_2019, edges_2020, edges_2021, edges_2022, edges_2023, edges_2024]:
     all_edges.extend(extract_references(edge_list))
 
 # Create a cuDF DataFrame from the edges list
