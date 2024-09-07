@@ -14,19 +14,10 @@ from arguments import parse_args
 from utility.metrics import (calculate_citation_diversity, simpsons_diversity_index, shannons_diversity_index,
                              gini_simpson_index, gini)
 from utility.utils_data import load_semantic_scholar_papers, \
-    load_semantic_scholar_references_parquet, load_keywords, load_arXiv_data
+    load_semantic_scholar_references_parquet, load_keywords, load_arXiv_data, convert_arxiv_url_to_id
 from utility.utils_misc import project_setup
 from utility.utils_time import time_difference_in_days
 
-
-def convert_arxiv_url_to_id(url: str):
-    id = url.split("arxiv.org/abs/")[-1]
-    if id[-2] == 'v':
-        id = id[:-2]
-
-    elif id[-3] == 'v':
-        id = id[:-3]
-    return id
 
 if __name__ == "__main__":
     project_setup()

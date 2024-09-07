@@ -172,6 +172,15 @@ def process_arxiv_entry(entry):
     return paper
 
 
+def convert_arxiv_url_to_id(url: str):
+    id = url.split("arxiv.org/abs/")[-1]
+    if id[-2] == 'v':
+        id = id[:-2]
+
+    elif id[-3] == 'v':
+        id = id[:-3]
+    return id
+
 def load_tag2papers(args):
     tag2papers = json.load(open(osp.join(args.data_dir, "tag2papers.json"), "r"))
     return tag2papers

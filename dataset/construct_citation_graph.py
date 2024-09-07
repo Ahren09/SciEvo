@@ -1,70 +1,165 @@
+import os
+import sys
+from tqdm import tqdm, trange
 import pandas as pd
-import cudf
-import cugraph
 import pickle
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+
+import networkx as nx
+import community as community_louvain  # pip install python-louvain
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+import const
+from arguments import parse_args
+from utility.utils_data import load_arXiv_data
+from utility.utils_data import load_semantic_scholar_papers, load_semantic_scholar_references_parquet
+from utility.utils_data import convert_arxiv_url_to_id
+
+args = parse_args()
+
+# Load Semantic Scholar Papers
+semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
+
+df = semantic_scholar_papers[['arXivId', 'paperId']].dropna()
+arXivID2SemanticScholarPaperID = dict(zip(df['arXivId'], df['paperId']))
+SemanticScholarPaperID2arXivID = dict(zip(df['paperId'], df['arXivId']))
+
+# Load arXiv data
+arxiv_data = load_arXiv_data(args.data_dir)
 
 def extract_references(data):
     """Extracts references and forms edges for the citation graph."""
     edges = []
-    for index, row in data.iterrows():
-        paper_id = row['arXivId']
-        if isinstance(row['references'], list):
+    for index, row in tqdm(data.iterrows(), total=len(data), position=0, leave=True):
+        source_arXivId = row['arXivId']
+        if isinstance(row['references'], (list, np.ndarray)):
             for ref in row['references']:
                 if 'citedPaper' in ref and ref['citedPaper']:
-                    cited_paper_id = ref['citedPaper'].get('paperId')
-                    if cited_paper_id:
-                        edges.append((cited_paper_id, paper_id))
+                    cited_paper_arXivId = SemanticScholarPaperID2arXivID.get(ref['citedPaper'].get('paperId'), None)
+                    if cited_paper_arXivId:
+                        edges.append((source_arXivId, cited_paper_arXivId))
     return edges
 
-# Read data from parquet files
-edges_1990_2004 = pd.read_parquet('semantic_scholar/references_1990-2004.parquet')
-print('Done: edges_1990_2004')
-edges_2005_2010 = pd.read_parquet('semantic_scholar/references_2005-2010.parquet')
-print('Done: edges_2005_2010')
-edges_2011_2015 = pd.read_parquet('semantic_scholar/references_2011-2015.parquet')
-print('Done: edges_2011_2015')
+arxiv_data['arXivId'] = arxiv_data['id'].apply(convert_arxiv_url_to_id)
 
-all_edges = []
-
-for (start, end) in [(1990, 2004), (2005, 2010), (2011, 2015)]:
-    edges = pd.read_parquet(f'semantic_scholar/references_{start}-{end}.parquet')
-    all_edges += [edges]
-
-print(f'Done: edges {start} -- {end}')
-
-for year in range(2016, 2025):
-    edges = pd.read_parquet(f'semantic_scholar/references_{year}.parquet')
-    all_edges += [edges]
+# citation_graph_edge_path = os.path.join(args.output_dir, "citation_analysis", "citation_graph_edgelist.parquet")
+citation_graph_path = os.path.join(args.output_dir, "citation_analysis", "citation_graph.pkl")
 
 
-arxiv_meta = pd.read_parquet('arXiv/arXiv_metadata.parquet')
+if os.path.exists(citation_graph_path):
+    print(f"Loading graph from {citation_graph_path}")
 
-# Set options to display full content
-pd.set_option('display.max_columns', None)  # Display all columns
-pd.set_option('display.max_rows', None)  # Display all rows
-pd.set_option('display.max_colwidth', None)  # Display full width of each column
-pd.set_option('display.width', None)  # Use maximum width available
+    with open(citation_graph_path, 'rb') as f:
+        G = pickle.load(f)
 
-print(edges_2024.iloc[0])
-print(arxiv_meta.iloc[0])
 
-# Convert dataframes to a single list of edges
-all_edges = []
-for edge_list in [edges_1990_2004, edges_2005_2010, edges_2011_2015, edges_2016, edges_2017, edges_2018, edges_2019, edges_2020, edges_2021, edges_2022, edges_2023, edges_2024]:
-    all_edges.extend(extract_references(edge_list))
+else:
+    # Create a Graph (use nx.Graph() for undirected, nx.DiGraph() for directed)
+    G = nx.DiGraph()
 
-# Create a cuDF DataFrame from the edges list
-gdf_edges = cudf.DataFrame(all_edges, columns=['src', 'dst'])
+    all_edges = []
+    for year in [1990, 2005, 2011] + list(range(2016, 2025)):
+        references_one_snapshot = load_semantic_scholar_references_parquet(args.data_dir, year)
+        edges = extract_references(references_one_snapshot)
+        all_edges += edges
 
-# Create a cuGraph Graph from the edge list
-G = cugraph.Graph()
-G.from_cudf_edgelist(gdf_edges, source='src', destination='dst', renumber=True)
+    # Convert the list of edges into a pandas DataFrame
+    edges_df = pd.DataFrame(all_edges, columns=['source', 'destination'])
 
-# Optionally, save the graph as a pickle file
-with open('citation_graph_cugraph.pkl', 'wb') as f:
-    pickle.dump(G, f)
+    # Display the DataFrame
+    print(edges_df.head())
 
-print("Graph created with", G.number_of_vertices(), "nodes and", G.number_of_edges(), "edges.")
+    # Add edges to the NetworkX graph
+    G.add_edges_from(edges_df.itertuples(index=False, name=None))
+
+    for _, row in arxiv_data.iterrows():
+        # Add node with arXivId as the node name, and title as the attribute
+        G.add_node(row['arXivId'], title=row['title'])
+
+    os.makedirs(os.path.dirname(citation_graph_path), exist_ok=True)
+
+    with open(citation_graph_path, 'wb') as f:
+        pickle.dump(G, f)
+
+    print(f"Saved graph to {citation_graph_path}")
+
+
+
+path_mask = os.path.join(args.data_dir, "NLP", "arXiv", "topic_mask.parquet")
+
+mask_df = pd.read_parquet(path_mask)
+
+topic2num_nodes = {}
+topic2num_nodes_in_largest_wcc = {}
+
+for subject, topics in const.SUBJECT2KEYWORDS.items():
+    for topic, keywords in tqdm(topics.items(), desc=subject):
+
+        print(f"Calculating metrics for keyword={topic}")
+        relevant_arxiv_ids = set(mask_df[mask_df[topic]]['arXivId'].tolist())
+
+        nodes_of_topic = list(set(G.nodes()) & relevant_arxiv_ids)
+
+        subgraph = G.subgraph(nodes_of_topic)
+        
+        print(f"Subgraph created with {subgraph.number_of_nodes()} nodes and {subgraph.number_of_edges()} edges.")
+
+        # Sort the weakly connected components by size in descending order
+        wccs = sorted(nx.weakly_connected_components(subgraph), key=lambda x: len(x), reverse=True)
+
+
+        # Extract the largest WCC belonging to the topic
+        largest_wcc = subgraph.subgraph(wccs[0]) 
+
+        largest_wcc = nx.to_undirected(largest_wcc)
+        partition = community_louvain.best_partition(largest_wcc)
+
+        topic2num_nodes[topic] = subgraph.number_of_nodes()
+        topic2num_nodes_in_largest_wcc[topic] = len(wccs[0])
+
+
+        # Step 3: Visualize the largest connected component with colored communities
+        # Define the layout for the graph visualization
+        pos = nx.spring_layout(largest_wcc)
+
+        # Get the list of unique communities
+        communities = set(partition.values())
+
+        # Color map for distinct communities (e.g., use matplotlib colormap)
+        cmap = plt.get_cmap('viridis', len(communities))
+
+        # Draw nodes with colors based on community
+        for node in largest_wcc.nodes():
+            community_id = partition[node]
+            nx.draw_networkx_nodes(largest_wcc, pos, nodelist=[node], node_color=[cmap(community_id)])
+
+        # Draw edges
+        nx.draw_networkx_edges(largest_wcc, pos)
+
+        # Show the plot
+        plt.title('Largest Weakly Connected Component with Community Detection')
+        plt.show()
+
+
+
+
+
+
+
+
+
+
+topic2num_nodes = pd.Series(topic2num_nodes)
+topic2num_nodes_in_largest_wcc = pd.Series(topic2num_nodes_in_largest_wcc)
+
+df = pd.concat([topic2num_nodes, topic2num_nodes_in_largest_wcc], axis=1)
+
+
+arxiv_data = load_arXiv_data(args.data_dir)
+
 
 import networkx as nx
 
@@ -74,76 +169,3 @@ NxG = G.to_networkx()
 nx.write_graphml(NxG, './graph.graphml')
 
 
-
-# Below: networkx version of the code
-
-# import pandas as pd
-# import networkx as nx
-# import pickle
-
-# # Data from the user's example (replace with actual dataframe loading if necessary)
-# # ref2021, ref2023, ref2024 are pandas DataFrames with arXiv data including 'arXivId' and 'references'
-
-# def extract_references(data):
-#     """Extracts references and forms edges for the citation graph."""
-#     edges = []
-#     for index, row in data.iterrows():
-#         paper_id = row['arXivId']
-#         if isinstance(row['references'], list):
-#             for ref in row['references']:
-#                 if 'citedPaper' in ref and ref['citedPaper']:
-#                     cited_paper_id = ref['citedPaper'].get('paperId')
-#                     if cited_paper_id:
-#                         edges.append((cited_paper_id, paper_id))
-#     return edges
-
-# # Create a directed graph
-# G = nx.DiGraph()
-
-# # ls data/semantic_scholar/
-# # references_1990-2004.parquet  references_2015.parquet  references_2018.parquet  references_2021.parquet  references_2024.parquet
-# # references_2005-2010.parquet  references_2016.parquet  references_2019.parquet  references_2022.parquet  semantic_scholar.parquet
-# # references_2011-2015.parquet  references_2017.parquet  references_2020.parquet  references_2023.parquet
-# # Extract edges from each DataFrame
-
-# # example
-# # edges2021 = extract_references(ref2021)
-# # edges2023 = extract_references(ref2023)
-# # edges2024 = extract_references(ref2024)
-# edges_1990_2004 = pd.read_parquet('semantic_scholar/references_1990-2004.parquet')
-# print('Done: edges_1990_2004')
-# edges_2005_2010 = pd.read_parquet('semantic_scholar/references_2005-2010.parquet')
-# print('Done: edges_2005_2010')
-# edges_2011_2015 = pd.read_parquet('semantic_scholar/references_2011-2015.parquet')
-# print('Done: edges_2011_2015')
-# edges_2015 = pd.read_parquet('semantic_scholar/references_2015.parquet')
-# print('Done: edges_2015')
-# edges_2016 = pd.read_parquet('semantic_scholar/references_2016.parquet')
-# print('Done: edges_2016')
-# edges_2017 = pd.read_parquet('semantic_scholar/references_2017.parquet')
-# print('Done: edges_2017')
-# edges_2018 = pd.read_parquet('semantic_scholar/references_2018.parquet')
-# print('Done: edges_2018')
-# edges_2019 = pd.read_parquet('semantic_scholar/references_2019.parquet')
-# print('Done: edges_2019')
-# edges_2020 = pd.read_parquet('semantic_scholar/references_2020.parquet')
-# print('Done: edges_2020')
-# edges_2021 = pd.read_parquet('semantic_scholar/references_2021.parquet')
-# print('Done: edges_2021')
-# edges_2022 = pd.read_parquet('semantic_scholar/references_2022.parquet')
-# print('Done: edges_2022')
-# edges_2023 = pd.read_parquet('semantic_scholar/references_2023.parquet')
-# print('Done: edges_2023')
-# edges_2024 = pd.read_parquet('semantic_scholar/references_2024.parquet')
-# print('Done: edges_2024')
-
-
-# # Add edges to the graph
-# for edge_list in [edges_1990_2004, edges_2005_2010, edges_2011_2015, edges_2015, edges_2016, edges_2017, edges_2018, edges_2019, edges_2020, edges_2021, edges_2022, edges_2023, edges_2024]:
-#     G.add_edges_from(edge_list)
-
-# # Optionally, save the graph as a pickle file
-# with open('citation_graph.pkl', 'wb') as f:
-#     pickle.dump(G, f)
-
-# print("Graph created with", G.number_of_nodes(), "nodes and", G.number_of_edges(), "edges.")
