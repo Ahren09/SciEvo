@@ -1,4 +1,4 @@
-import os.path
+import os
 from collections import defaultdict
 from datetime import datetime
 
@@ -8,6 +8,8 @@ import pytz
 import seaborn as sns
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+import itertools
 
 import const
 from arguments import parse_args
@@ -30,30 +32,33 @@ if __name__ == "__main__":
 
     semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
 
-
-        # for month in range(1, 13):
-        #     references_one_month = load_semantic_scholar_references(year, month, args.data_dir)
-        #     semantic_scholar_papers_one_month = load_semantic_scholar_papers(year, month, args.data_dir)
-        #     arXivID2References.update(references_one_month)
-        #     arXivID2SemanticScholarPaper.update(semantic_scholar_papers_one_month)
-
-    # TODO: Get citation age
+    # Extract 'ArXiv' externalIds and assign them to the 'arXivId' column
+    semantic_scholar_papers['arXivId'] = semantic_scholar_papers['externalIds'].apply(lambda x: x.get('ArXiv', None))
 
     arxiv_data = load_arXiv_data(args.data_dir)
+    arxiv_data['arXivId'] = arxiv_data['id'].apply(convert_arxiv_url_to_id)
+
+
+    semantic_scholar_papers['arXivId'] = semantic_scholar_papers['externalIds'].apply(lambda x: x.get('ArXiv', None))
+
 
     for feature_name in ['title', 'title_and_abstract']:
         arxiv_data[f'{feature_name}_keywords'] = arxiv_data[f'{feature_name}_keywords'].apply(
             lambda x: x if isinstance(x, (set, list)) else set(
                 [paper_kwd.strip() for paper_kwd in x.lower().split(',')]))
 
+    """
+    # Mask w.r.t. topics extracted by LLMs
     path_mask = os.path.join(args.data_dir, "NLP", "arXiv", "topic_mask.parquet")
 
     if os.path.exists(path_mask):
         mask_df = pd.read_parquet(path_mask)
 
     else:
-
         mask_df = pd.DataFrame(index=arxiv_data.index)
+
+        # for subject in const.SUBJECT
+
         # Iterate over each subject and topic in SUBJECT2KEYWORDS
         for subject, topics in const.SUBJECT2KEYWORDS.items():
             for topic, keywords in tqdm(topics.items(), desc=subject):
@@ -63,42 +68,35 @@ if __name__ == "__main__":
                         keywords))
                 )
 
-        """
-        # Get mask for papers that contain keywords
-        mask = {}
-        for index_row, row in tqdm(arxiv_data.iterrows(), total=len(arxiv_data)):
-            # print(row)
-            contains_keywords = False
-            # for keyword in const.SUBJECT2KEYWORDS['Computer Science'][8]:
-            keywords_one_paper = set([kwd.strip().lower() for kwd in row[f"{feature_name}_keywords"].split(',')])
 
-            for keyword in const.SUBJECT2KEYWORDS['Computer Science'][8]:
-                # print(keywords_one_paper)
-
-                if keyword.lower() in keywords_one_paper:
-                    contains_keywords = True
-                    # print(keyword)
-
-            id = row['id']
-            # id = row['id'].split("arxiv.org/abs/")[-1]
-            # if id[-2] == 'v':
-            #     id = id[:-2]
-
-            # elif id[-3] == 'v':
-            #     id = id[:-3]
-
-            mask[id] = contains_keywords
-
-        mask = pd.Series(mask).reset_index(name='contains_keyword').rename({'index': 'arXivId'}, axis=1)
-        mask['arXivId'] = mask['arXivId'].apply(convert_arxiv_url_to_id)
-        mask = mask.drop_duplicates("arXivId").reset_index(drop=True)
-        mask.to_csv("mask.csv", index=False)
-        """
+        mask_df['arXivId'] = arxiv_data['arXivId']
         mask_df.to_parquet(path_mask)
 
-    arxiv_data['arXivId'] = arxiv_data['id'].apply(convert_arxiv_url_to_id)
-    arxiv_data = arxiv_data.drop_duplicates('arXivId')
+    """
 
+    # Mask w.r.t. subject areas extracted by LLMs
+    path_mask = os.path.join(args.data_dir, "NLP", "arXiv", "subject_mask.parquet")
+
+    if os.path.exists(path_mask):
+        mask_df = pd.read_parquet(path_mask)
+
+    else:
+        mask = {}
+
+        mask_df = pd.DataFrame(index=arxiv_data.index)
+        for subject in const.ARXIV_SUBJECTS:
+            # Create a boolean mask DataFrame indicating if any tag in each row matches desired categories
+            mask[subject] = arxiv_data['tags'].apply(lambda tags: any(tag in const.ARXIV_SUBJECTS[subject] for tag in
+                                                             tags))
+            for tag in const.ARXIV_SUBJECTS[subject]:
+                mask[tag] = arxiv_data['tags'].apply(lambda tags: tag in tags)
+
+        mask_df = mask_df.concatenate([mask_df, pd.DataFrame(mask)], axis=1)
+        mask_df['arXivId'] = arxiv_data['arXivId']
+        mask_df = mask_df.drop_duplicates('arXivId')
+        mask_df.to_parquet(path_mask)
+
+    arxiv_data = arxiv_data.drop_duplicates('arXivId')
 
 
     # Set the timezone once
@@ -173,7 +171,6 @@ if __name__ == "__main__":
         result = pd.read_parquet(path_citation_age_and_diversity)
 
     else:
-
         age_of_citations, citation_diversity = {}, {}
 
         for year in years:
@@ -211,7 +208,7 @@ if __name__ == "__main__":
         result['published'] = arxiv_data.set_index('arXivId').loc[list(set(result.index.tolist()) & set(arxiv_data[
                                                                                                             'arXivId']
                                                                                                         )), 'published']
-
+        result.index = result.index.set_names("arXivId")
         result.to_parquet(path_citation_age_and_diversity)
 
 
@@ -230,57 +227,151 @@ if __name__ == "__main__":
     # Extract the year-month from the 'published' column
     result['published_year_month'] = result['published'].dt.to_period('M')
 
-    for subject, topics in const.SUBJECT2KEYWORDS.items():
-        for topic, keywords in tqdm(topics.items(), desc=subject):
+    aggregated_metrics = {}
+    path = os.path.join(args.output_dir, "stats", "citation_diversity_and_aoc_by_subject.xlsx")
 
-            print(f"Calculating metrics for keyword={topic}")
-            relevant_arxiv_ids = set(mask_df[mask_df[topic]]['arXivId'])
+    if os.path.exists(path):
+        aoc_df = pd.read_excel(path, sheet_name='AoC')
 
+    else:
+
+        data = {'subject': [], 'AoC': []}
+        for subject in const.ARXIV_SUBJECTS:
+            # Create a boolean mask DataFrame indicating if any tag in each row matches desired categories
+            relevant_arxiv_ids = set(mask_df[mask_df[subject]]['arXivId'].tolist())
             relevant_arxiv_ids = list(relevant_arxiv_ids & set(result.index))
 
-            result_one_topic = result.loc[list(relevant_arxiv_ids)]
-            result_one_topic = result_one_topic[~result_one_topic['diversity'].isna()]
-            print(f"Topic={topic}, #papers={len(result_one_topic)}")
+            result_one_subject = result.loc[relevant_arxiv_ids]
 
-            result_one_topic['simpson'] = result_one_topic['diversity'].apply(lambda x: simpsons_diversity_index(x))
-            result_one_topic['shannon'] = result_one_topic['diversity'].apply(lambda x: shannons_diversity_index(x))
-            result_one_topic['gini'] = result_one_topic['diversity'].apply(lambda x: gini(x))
-            result_one_topic['mean_aoc'] = result_one_topic['aoc'].apply(lambda x: np.mean(x) if isinstance(x, (np.ndarray, list)) else
-            None)
-            result_one_topic['std_aoc'] = result_one_topic['aoc'].apply(lambda x: np.std(x) if isinstance(x, (np.ndarray, list)) else None)
-            result_one_topic['median_aoc'] = result_one_topic['aoc'].apply(lambda x: np.median(x) if isinstance(x, (np.ndarray,
-                                                                                                 list)) else None)
+            aoc_list = list(itertools.chain.from_iterable(item for item in result_one_subject['aoc'] if item is not None and len(item) > 0))
+
+            aoc_list = [x for x in aoc_list if x > 0.]
 
 
-            # Change the topic names for better visualization
-            if " " in topic:
-                topic = " ".join([word.capitalize() for word in topic.split(' ')])
 
+            result_one_subject['mean_aoc'] = result_one_subject['aoc'].apply(
+                lambda x: np.mean(x) if isinstance(x, (np.ndarray, list)) else
+                None)
+            result_one_subject['std_aoc'] = result_one_subject['aoc'].apply(
+                lambda x: np.std(x) if isinstance(x, (np.ndarray, list)) else None)
+            result_one_subject['median_aoc'] = result_one_subject['aoc'].apply(
+                lambda x: np.median(x) if isinstance(x, (np.ndarray,
+                                                         list)) else None)
 
-            aggregated_metrics[topic] = {
-                'Simpson': result_one_topic['simpson'].mean(),
-                'Shannon': result_one_topic['shannon'].mean(),
-                'Gini': result_one_topic['gini'].mean(),
-                'Mean AoC': result_one_topic['mean_aoc'].mean(),
-                'Std AoC': result_one_topic['std_aoc'].mean(),
-                'Median AoC': result_one_topic['median_aoc'].mean()
+            aggregated_metrics[subject] = {
+                'Mean AoC': np.mean(aoc_list),
+                'Std AoC': np.std(aoc_list),
+                'Median AoC': np.median(aoc_list)
             }
+            data['subject'] += [subject] * len(result_one_subject)
+            data['AoC'] += result_one_subject['mean_aoc'].tolist()
 
-            mAoC_by_month[topic] = result_one_topic.groupby('published_year_month')['mean_aoc'].mean()
+            for tag in const.ARXIV_SUBJECTS[subject]:
+                relevant_arxiv_ids = set(mask_df[mask_df[tag]]['arXivId'].tolist())
+                relevant_arxiv_ids = list(relevant_arxiv_ids & set(result.index))
+
+                result_one_subject = result.loc[relevant_arxiv_ids]
+
+                aoc_list = list(itertools.chain.from_iterable(
+                    item for item in result_one_subject['aoc'] if item is not None and len(item) > 0))
+
+                result_one_subject['mean_aoc'] = result_one_subject['aoc'].apply(
+                    lambda x: np.mean(x) if isinstance(x, (np.ndarray, list)) else
+                    None)
+
+                data['subject'] += [subject] * len(result_one_subject)
+                data['AoC'] += result_one_subject['mean_aoc'].tolist()
 
 
-    # Lowest mAoC comes first
-    aggregated_metrics_df = pd.DataFrame(aggregated_metrics).T.sort_values(by='mean_aoc', ascending=True)
 
-    aggregated_metrics_df.to_excel(os.path.join(args.output_dir, "stats", "aggregated_metrics.xlsx"))
 
-    df = aggregated_metrics_df[['Mean AoC', 'Std AoC', 'Median AoC']].sort_values(by='Mean AoC', ascending=True)
+        sns.stripplot(
+            data=pd.DataFrame(data), x="AoC", hue="subject",
+            dodge=True, alpha=.05, zorder=1, legend=False,
+        )
 
-    # Plot the line plot
+        # Lowest mAoC comes first
+        aoc_df = pd.DataFrame(aggregated_metrics).T[['Mean AoC', 'Std AoC', 'Median AoC']].sort_values(
+            by='Mean AoC',
+            ascending=True)
+
+
+
+        with pd.ExcelWriter(path) as writer:
+            aoc_df.to_excel(writer, sheet_name='AoC')
+
+
+
+    path = os.path.join(args.output_dir, "stats", "citation_diversity_and_aoc_by_topic.xlsx")
+
+    aggregated_metrics = {}
+
+    if os.path.exists(path):
+        aoc_df = pd.read_excel(path, sheet_name='AoC')
+        citation_diversity_df = pd.read_excel(path, sheet_name='Diversity')
+
+    else:
+
+        for subject, topics in const.SUBJECT2KEYWORDS.items():
+            for topic, keywords in tqdm(topics.items(), desc=subject):
+
+                print(f"Calculating metrics for keyword={topic}")
+                relevant_arxiv_ids = set(mask_df[mask_df[topic]]['arXivId'].tolist())
+
+                relevant_arxiv_ids = list(relevant_arxiv_ids & set(result.index))
+
+                result_one_topic = result.loc[list(relevant_arxiv_ids)]
+                result_one_topic = result_one_topic[~result_one_topic['diversity'].isna()]
+                print(f"Topic={topic}, #papers={len(result_one_topic)}")
+
+                result_one_topic['simpson'] = result_one_topic['diversity'].apply(lambda x: simpsons_diversity_index(x))
+                result_one_topic['shannon'] = result_one_topic['diversity'].apply(lambda x: shannons_diversity_index(x))
+                result_one_topic['gini'] = result_one_topic['diversity'].apply(lambda x: gini(x))
+
+                aoc_list = list(itertools.chain.from_iterable(filter(None, result_one_topic['aoc'])))
+                aoc_list = [x for x in aoc_list if x > 0.]
+
+
+                """
+                result_one_topic['mean_aoc'] = result_one_topic['aoc'].apply(lambda x: np.mean(x) if isinstance(x, (np.ndarray, list)) else
+                None)
+                result_one_topic['std_aoc'] = result_one_topic['aoc'].apply(lambda x: np.std(x) if isinstance(x, (np.ndarray, list)) else None)
+                result_one_topic['median_aoc'] = result_one_topic['aoc'].apply(lambda x: np.median(x) if isinstance(x, (np.ndarray,
+                                                                                                     list)) else None)
+                
+                """
+
+
+                # Change the topic names for better visualization
+                if " " in topic:
+                    topic = " ".join([word.capitalize() for word in topic.split(' ')])
+
+
+                aggregated_metrics[topic] = {
+                    'Simpson': result_one_topic['simpson'].mean(),
+                    'Shannon': result_one_topic['shannon'].mean(),
+                    'Gini': result_one_topic['gini'].mean(),
+                    'Mean AoC': np.mean(aoc_list),
+                    'Std AoC': np.std(aoc_list),
+                    'Median AoC': np.median(aoc_list)
+                }
+
+                mAoC_by_month[topic] = result_one_topic.groupby('published_year_month')['mean_aoc'].mean()
+
+
+        # Lowest mAoC comes first
+        aoc_df = pd.DataFrame(aggregated_metrics).T[['Mean AoC', 'Std AoC', 'Median AoC']].sort_values(by='Mean AoC',
+        ascending=True)
+
+        citation_diversity_df = pd.DataFrame(aggregated_metrics).T[['Simpson', 'Shannon', 'Gini']].sort_values(by='Simpson', ascending=True)
+
+
+        with pd.ExcelWriter(path) as writer:
+            aoc_df.to_excel(writer, sheet_name='AoC')
+            citation_diversity_df.to_excel(writer, sheet_name='Diversity')
+
+    # Plot line plots for AoC
     plt.figure(figsize=(10, 6))
-
-    sns.lineplot()
-
 
     plt.plot(result_one_topic['year_month'].astype(str), result_one_topic['mean_aoc'],
              marker='o')

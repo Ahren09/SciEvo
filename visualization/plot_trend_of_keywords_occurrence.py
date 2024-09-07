@@ -3,7 +3,6 @@ Archived on 2024-05-11. Not sure how we can used this code
 
 """
 
-
 import json
 import os
 import os.path as osp
@@ -18,25 +17,18 @@ from tqdm import tqdm
 
 sys.path.insert(0, os.path.abspath('..'))
 
-from utility.utils_data import load_arXiv_data
-from utility.utils_text import load_semantic_scholar_data
-
-
+from utility.utils_data import load_arXiv_data, load_semantic_scholar_papers
 import const
 from arguments import parse_args
 
 # Suppress FutureWarning
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-START_YEAR, START_MONTH = 1990, 1
-END_YEAR, END_MONTH = 2024, 5
-
 args = parse_args()
 
-semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
+semantic_scholar_data = load_semantic_scholar_papers(args.data_dir)
 
-data = load_arXiv_data(args.data_dir, start_year=START_YEAR, start_month=START_MONTH, end_year=END_YEAR,
-                               end_month=END_MONTH)
+data = load_arXiv_data(args.data_dir)
 
 ngrams = json.load(open(osp.join(args.output_dir, "ngrams.json"), "r"))
 print(f"Number of ngrams: {len(ngrams)}")

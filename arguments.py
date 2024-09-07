@@ -27,6 +27,7 @@ def parse_args():
                         help="Whether to do visualization")
     parser.add_argument('--embedding_dim', type=int, help="Step size for the scheduler", default=50)
     parser.add_argument('--epochs', type=int, default=50, help="Number of epochs")
+    parser.add_argument('--random_seed', type=int, default=42, help="")
     parser.add_argument('--embed_dim', type=int, default=100, help="Dimension of the generated embeddings.")
     parser.add_argument('--graph_backend', type=str, default="networkx", choices=["networkx", "rapids"], help="Dimension of the hidden layer.")
     parser.add_argument('--lr', type=float, default=1e-2)

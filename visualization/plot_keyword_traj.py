@@ -1,7 +1,7 @@
 """
 Run `get_keyword_trajectory_coords.py` first, then run this script to plot the trajectories
 
-
+For the trajectories in the paper, see `notebooks/Plot_selected_trajectories.ipynb`
 """
 import random
 

@@ -80,6 +80,8 @@ ARXIV_SUBJECTS = {
     "cs": ARXIV_CATEGORIES_CS,
     "physics": ARXIV_CATEGORIES_PHYSICS,
 }
+ARXIV_CATEGORIES_TO_SUBJECT = {cat: subject for subject, cats in ARXIV_SUBJECTS.items() for cat in cats}
+
 
 ARXIV_SUBJECTS_LIST = [tag for name, cat in ARXIV_SUBJECTS.items() for tag in cat]
 
@@ -217,10 +219,10 @@ SUBJECT2KEYWORDS = {
         'Cybersecurity': ['cybersecurity', 'security', 'privacy', 'cryptography'],
         'Bias': ['bias', 'fairness', 'ethics', 'ethical', 'fair', 'bias', 'equality', 'fairness', 'equity'],
         'Adversarial': ['adversarial', 'robustness', 'defense', 'adversarial training'],
-        'explainable': ['explainable', 'interpretability', 'interpretation', 'interpretable', 'explanation',
+        'Explainable AI': ['explainable', 'interpretability', 'interpretation', 'interpretable', 'explanation',
                         'explainability',
                         'xai'],
-        'multilingual': ['multilingual', 'cross-lingual', 'translation', 'mt'],
+        'Multi-lingual Applications': ['multilingual', 'cross-lingual', 'translation', 'mt'],
         'named entity': ['named entity', 'ner', 'entity recognition', 'srl', 'tagging', 'pos', 'part-of-speech'],
         'question answering': ['question answering', 'qa', 'question', 'answering', 'q&a'],
         'CNN': ['cnn', 'cnns', 'convolutional', 'convolution'],
@@ -237,7 +239,7 @@ SUBJECT2KEYWORDS = {
         'Multiculture': ['multicultural', 'multiculture', 'diversity', 'inclusive', 'inclusion', 'cross-cultural']},
     'Business': {'consumer neuroscience': ['consumer neuroscience', 'neuromarketing', 'decision making',
                                            'consumer behavior'],
-                 'sustainable': ['sustainable', 'sustainability', 'green logistics',
+                 'Sustainability': ['sustainable', 'sustainability', 'green logistics',
                                  'social responsibility', 'environmental management',
                                  'environmental protection'],
                  'Fintech': ['fintech', 'blockchain', 'digital payments', 'regtech'],
@@ -260,7 +262,7 @@ SUBJECT2KEYWORDS = {
     'neurodegenerative': ['neurodegenerative', 'alzheimer', 'parkinson', 'tauopathy', 'tauopathies'],
     'stem cell therapy': ['stem cell therapy', 'regenerative medicine', 'tissue engineering', 'cell therapy',
                           'bone marrow transplant', 'pluripotent stem cells'],
-    'radiology': ['radiology', 'imaging', 'MRI', 'CT scan', 'ultrasound', 'nuclear medicine', 'diagnostic imaging'],
+    'Radiology': ['radiology', 'imaging', 'MRI', 'CT scan', 'ultrasound', 'nuclear medicine', 'diagnostic imaging'],
     'Epidemiology': ['epidemiology', 'public health', 'disease surveillance', 'vaccination programs', 'health policy',
                      'outbreak response'],
     'aging': ['aging', 'gerontology', 'longevity', 'senescence', 'anti-aging therapies', 'age-related diseases'],
@@ -270,10 +272,10 @@ SUBJECT2KEYWORDS = {
                            'molecular cloning'],
     'synthetic biology': ['synthetic biology', 'synthetic genomes', 'artificial life', 'genetic synthesis',
                           'bioengineering'],
-    'environmental dna': ['environmental dna', 'biodiversity', 'ecological surveying', 'conservation genetics'],
+    'Biodiversity': ['environmental dna', 'biodiversity', 'ecological surveying', 'conservation genetics'],
     'bioinformatics': ['bioinformatics', 'phylogenetics', 'genomic sequencing', 'taxonomy'],
-    'neuroscience': ['neuroscience', 'neural circuits', 'neurobiology', 'brain function', 'cognitive'],
-    'plant biology': ['plant biology', 'photosynthesis', 'botany', 'plant genetics', 'agricultural science',
+    'Neuroscience': ['neuroscience', 'neural circuits', 'neurobiology', 'brain function', 'cognitive'],
+    'Plant Biology': ['plant biology', 'photosynthesis', 'botany', 'plant genetics', 'agricultural science',
                       'crop engineering'],
     'marine biology': ['marine biology', 'oceanography', 'aquatic ecosystems', 'coral reefs', 'marine conservation',
                        'deep-sea research'],
@@ -281,7 +283,7 @@ SUBJECT2KEYWORDS = {
                               'stem cell niches'],
     'evolutionary biology': ['evolutionary biology', 'natural selection', 'speciation', 'phylogeny',
                              'adaptive evolution', 'population genetics'],
-    'microbiology': ['microbiology', 'bacteriology', 'virology', 'pathogens', 'antibiotics', 'infectious diseases',
+    'Microbiology': ['microbiology', 'bacteriology', 'virology', 'pathogens', 'antibiotics', 'infectious diseases',
                      'microbial resistance']}, 'Physics': {
     'quantum mechanics': ['quantum', 'quantum mechanics', 'quantum field', 'quantum algorithms'],
     'dark energy': ['dark energy', 'dark matter', 'cosmology', 'gravitational waves', 'black holes'],
@@ -292,23 +294,23 @@ SUBJECT2KEYWORDS = {
     'solar energy': ['perovskite', 'solar cells', 'photovoltaics', 'solar energy', 'nanomaterials'],
     'internet of things': ['internet of things', 'iotcybersecurity', 'network security', 'smart devices'],
     '5G': ['5g', 'wireless', 'mobile', 'network infrastructure', 'edge computing'],
-    'biomimetic': ['biomimetic', 'biomimetics', 'bio-inspired design', 'material science', 'sustainable technology'],
+    'Biomimetic': ['biomimetic', 'biomimetics', 'bio-inspired design', 'material science', 'sustainable technology'],
     'additive manufacturing': ['additive manufacturing', '3d printing', 'prototyping', 'prototype',
                                'industrial manufacturing']}, 'Mathematics': {
         'algebraic geometry': ['algebraic geometry', 'complex manifolds', 'commutative algebra', 'number theory'],
         'Optimization': ['optimization', 'optimize', 'statistical learning', 'algorithmic efficiency',
                          'computational efficiency'],
         'PDE': ['pde', 'differential equations', 'mathematical modeling', 'chaos theory', 'fluid dynamics'],
-        'graph theory': ['random graphs', 'graph', 'graphs', 'networks', 'probability theory', 'network science',
+        'Graph Theory': ['random graphs', 'graph', 'graphs', 'networks', 'probability theory', 'network science',
                           'statistical mechanics'],
         'probability': ['probability', 'stochastic', 'random processes', 'markov', 'mcmc', 'martingales'],
-        'mathematical biology': ['mathematical biology', 'biostatistics', 'epidemiology', 'population']}, 'History': {
-        'microhistory': ['microhistory', 'narrative history', 'cultural history', 'social structures',
+        'Mathematical Biology': ['mathematical biology', 'biostatistics', 'epidemiology', 'population']}, 'History': {
+        'Narrative History': ['microhistory', 'narrative history', 'cultural history', 'social structures',
                          'historiography'],
         'transnational': ['transnational', 'migration', 'globalization', 'cultural exchange', 'diaspora'],
         'Pandemics': ['pandemics', 'epidemics', 'epidemiology', 'medical history', 'public health', 'disease'],
-        'archive': ['archive', 'archival', 'digital', 'historiography', 'digital humanities', 'archival science'],
-        'oral history': ['oral history', 'memory', 'narrative analysis', 'cultural memory', 'historical methodology']}}
+        'Digital Humanities': ['archive', 'archival', 'digital', 'historiography', 'digital humanities', 'archival science'],
+        'Oral History': ['oral history', 'memory', 'narrative analysis', 'cultural memory', 'historical methodology']}}
 
 # Following the above function, we can create a dictionary that maps each keyword tuple to an ID
 KEYWORD2ID = {}
