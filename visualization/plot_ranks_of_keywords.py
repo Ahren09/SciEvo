@@ -61,7 +61,7 @@ def main():
         #     continue
 
         # Create the line plot
-        fig, ax = plt.subplots(figsize=(8, 4), dpi=300)
+        fig, ax = plt.subplots(figsize=(7, 3.5), dpi=300)
         sns.lineplot(data=data.T[keywords_of_interest], marker='o', palette='deep', ax=ax)
         ax.grid(False)
 
@@ -104,7 +104,7 @@ def main():
         ax.legend(title='',
                    fontsize=plot_config.FONT_SIZE,
                    framealpha=0.5,
-
+                    edgecolor="white",
                    loc=loc,
                    # title_fontsize=plot_config.FONT_SIZE
                    )

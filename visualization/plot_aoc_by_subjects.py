@@ -10,7 +10,7 @@ from visualization import plot_config
 
 matplotlib.rcParams['figure.dpi'] = 300
 
-SECONDS_IN_A_DAY = 60 * 60 * 24
+SECONDS_IN_A_YEAR = 86400 * 365
 
 args = parse_args()
 
@@ -43,9 +43,9 @@ aoc_df = aoc_df.reset_index().rename(columns={'index': 'Topic'})
 #                         var_name='Metric', value_name='Value')
 
 # Convert the AoC values from seconds to days
-aoc_df['Mean AoC'] = aoc_df['Mean AoC'] / SECONDS_IN_A_DAY
-aoc_df['Std AoC'] = aoc_df['Std AoC'] / SECONDS_IN_A_DAY
-aoc_df['Median AoC'] = aoc_df['Median AoC'] / SECONDS_IN_A_DAY
+aoc_df['Mean AoC'] = aoc_df['Mean AoC'] / SECONDS_IN_A_YEAR
+aoc_df['Std AoC'] = aoc_df['Std AoC'] / SECONDS_IN_A_YEAR
+aoc_df['Median AoC'] = aoc_df['Median AoC'] / SECONDS_IN_A_YEAR
 
 # Now, melt the DataFrame for easy plotting
 aoc_df_melted = pd.melt(aoc_df, id_vars=['Topic'], value_vars=['Mean AoC', 'Std AoC', 'Median AoC'],
@@ -72,7 +72,7 @@ sns.lineplot(data=aoc_df, x='Topic', y='Median AoC', marker='o', label='Median A
 plt.fill_between(aoc_df['Topic'],
                  aoc_df['Mean AoC'] - aoc_df['Std AoC'],
                  aoc_df['Mean AoC'] + aoc_df['Std AoC'],
-                 color='#8ecae6', alpha=0.2, label='')
+                 color='#8ecae6', alpha=0.5, label='')
 
 
 # Rotate x-axis labels for better readability
@@ -80,13 +80,18 @@ plt.xticks(rotation=90)
 
 # Add title and labels
 plt.title('Age of Citations (AoC) Across Topics', fontsize=plot_config.FONT_SIZE)
-plt.ylabel('Age of Citations (AoC) In Days', fontsize=plot_config.FONT_SIZE)
+plt.ylabel('Age of Citations (AoC) In Years', fontsize=plot_config.FONT_SIZE)
 plt.xlabel('Academic Topics', fontsize=plot_config.FONT_SIZE)
 plt.legend(title="Metrics", title_fontsize=plot_config.FONT_SIZE + 2, prop={'size': plot_config.FONT_SIZE})
 
 # Show the plot
 plt.tight_layout()
-plt.savefig(os.path.join(args.output_dir, "visual", 'AoC_by_topics.pdf'), dpi=300)
+
+path = os.path.join(args.output_dir, "visual", "AoC", 'AoC_by_topics.pdf')
+
+os.makedirs(os.path.dirname(path), exist_ok=True)
+
+plt.savefig(path, dpi=300)
 plt.show()
 
 print("Done!")

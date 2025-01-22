@@ -114,7 +114,7 @@ def load_keywords(data_dir: str, attribute: str):
     for k, v in tqdm(keywords.items(), desc="Adding Keywords"):
         entries.append((k, [keyword.lower().strip() for keyword in v.split(",")]))
     keywords = pd.DataFrame(entries, columns=["id", "keywords"]).set_index("id")
-    keywords = keywords.join(arxiv_data[['id', 'published']].set_index("id"))
+    keywords = keywords.join(arxiv_data[['id', 'published', 'tags_cleaned']].set_index("id"))
 
     return keywords
 

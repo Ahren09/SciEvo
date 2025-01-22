@@ -18,9 +18,11 @@ rs = np.random.RandomState(42)
 # x = rs.randn(500)
 # g = np.tile(list("ABCDEFGHIJ"), 50)
 # df = pd.DataFrame(dict(x=x, g=g))
-df = pd.read_csv("aoc_all_subjects.csv")
+df = pd.read_csv(os.path.join(args.output_dir, "stats", "aoc_all_subjects.csv"))
 df = df.dropna(axis=0).reset_index(drop=True)
 df = df[df['AoC'] < 1.2e9]
+
+df['AoC'] = df['AoC'] / (60 * 60 * 24 * 365)  # Convert seconds to years
 
 # Initialize the FacetGrid object
 pal = sns.cubehelix_palette(10, rot=-.25, light=.7)
@@ -56,7 +58,7 @@ plt.subplots_adjust(bottom=0.2)
 g.set_titles("")
 g.set(yticks=[], ylabel="")
 g.despine(bottom=True, left=True)
-g.set_axis_labels("Age of Citation (AoC) in seconds")  # Change the x-label
+g.set_axis_labels("Age of Citation (AoC) in years")  # Change the x-label
 # plt.tight_layout()
-plt.savefig(os.path.join(args.output_dir, "visual", "aoc_all_subject.pdf"), dpi=300)
+plt.savefig(os.path.join(args.output_dir, "visual", "aoc_all_subjects.pdf"), dpi=300)
 plt.show()
