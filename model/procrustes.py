@@ -71,7 +71,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Load shared vocabulary indices
-    # with open(f"../arXivData/checkpoints/{args.feature_name}/word2vec/shared_vocab.pkl", 'rb') as f:
+    # with open(f"../SciEvo/checkpoints/{args.feature_name}/word2vec/shared_vocab.pkl", 'rb') as f:
     #     d = pickle.load(f)
     #
     # shared_wi = d["wi"]

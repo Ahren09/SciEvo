@@ -11,6 +11,7 @@ from typing import List
 
 import pandas as pd
 import pytz
+from datasets import Dataset
 from tqdm import tqdm
 
 import const
@@ -70,6 +71,11 @@ def load_arXiv_data(data_dir: str, start_year: int = None, start_month: int = No
 
     for column_name in ['title_keywords', 'title_and_abstract_keywords', 'title', 'summary']:
         data[column_name].fillna("", inplace=True)
+
+    # If needed, push to HuggingFace
+
+    hf_dataset = Dataset.from_pandas(data)
+    hf_dataset.push_to_hub("Ahren09/SciEvo")
 
     return data
 

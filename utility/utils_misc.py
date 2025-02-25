@@ -8,7 +8,7 @@ import numpy as np
 def check_cwd():
     basename = osp.basename(osp.normpath(os.getcwd()))
     assert basename.lower() in [
-        "arxivdata"], "Please run this file from parent directory (arXivData/)"
+        "arxivdata"], "Please run this file from parent directory (SciEvo/)"
 
 
 def project_setup():

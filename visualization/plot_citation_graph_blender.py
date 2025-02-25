@@ -4,7 +4,7 @@ import math
 import random
 
 # Load the graph data from the JSON file
-with open("/Users/ahren/Workspace/NLP/arXivData/outputs/visual/graph_data.json", "r") as f:
+with open("//outputs/visual/graph_data.json", "r") as f:
     graph_data = json.load(f)
 
 
