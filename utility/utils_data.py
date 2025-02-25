@@ -11,6 +11,7 @@ from typing import List
 
 import pandas as pd
 import pytz
+from datasets import Dataset
 from tqdm import tqdm
 
 import const
@@ -70,6 +71,11 @@ def load_arXiv_data(data_dir: str, start_year: int = None, start_month: int = No
 
     for column_name in ['title_keywords', 'title_and_abstract_keywords', 'title', 'summary']:
         data[column_name].fillna("", inplace=True)
+
+    # If needed, push to HuggingFace
+
+    # hf_dataset = Dataset.from_pandas(data)
+    # hf_dataset.push_to_hub("Ahren09/SciEvo")
 
     return data
 
@@ -273,7 +279,7 @@ def load_semantic_scholar_papers(data_dir: str, start_year: int = None, start_mo
     path = osp.join(data_dir, "NLP", "semantic_scholar", f"semantic_scholar.parquet")
 
     data = pd.read_parquet(path)
-
+    data = data.rename(columns={'publicationDate': 'semanticScholarPublicationDate'})
     data['arXivPublicationDate'] = pd.to_datetime(data['arXivPublicationDate'], utc=True)
 
     if start_year is not None and start_month is not None and end_year is not None and end_month is not None:
@@ -284,7 +290,7 @@ def load_semantic_scholar_papers(data_dir: str, start_year: int = None, start_mo
 
     print(f"Loaded {len(data)} entries from Semantic Scholar.")
 
-    data.publicationDate = pd.to_datetime(data.publicationDate, utc=True)
+    data.semanticScholarPublicationDate = pd.to_datetime(data.semanticScholarPublicationDate, utc=True)
     data.arXivPublicationDate = pd.to_datetime(data.arXivPublicationDate, utc=True) # Some of these are null
 
     return data

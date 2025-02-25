@@ -6,6 +6,7 @@ gradio_cached_examples
 checkpoints/
 keys.py
 demo*
+data
 
 # Output and data files
 ./Data
@@ -48,8 +49,7 @@ TrainingLog.md
 # Mac OS X files
 .DS_Store
 
-# Image files
-*.png
+
 
 # Machine learning and data analysis files
 *.pt
