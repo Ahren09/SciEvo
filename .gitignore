@@ -49,8 +49,7 @@ TrainingLog.md
 # Mac OS X files
 .DS_Store
 
-# Image files
-*.png
+
 
 # Machine learning and data analysis files
 *.pt
