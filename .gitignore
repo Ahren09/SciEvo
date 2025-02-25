@@ -6,6 +6,7 @@ gradio_cached_examples
 checkpoints/
 keys.py
 demo*
+data
 
 # Output and data files
 ./Data

@@ -8,6 +8,7 @@ import pytz
 import seaborn as sns
 from matplotlib import pyplot as plt
 from tqdm import tqdm
+from datasets import DatasetDict, Dataset
 
 import itertools
 
@@ -30,12 +31,32 @@ if __name__ == "__main__":
     # references_one_year = load_semantic_scholar_references_parquet(start_year=1990, end_year=2024,
     #                                                                data_dir=args.data_dir)
 
+    all_references = []
+    
     semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
-
+    years = [1990, 2005, 2011] + list(np.arange(2016, 2025))
+    for year in years:
+        references_one_snapshot = load_semantic_scholar_references_parquet(args.data_dir, start_year=year)
+        all_references.append(references_one_snapshot)
+        
+    all_references = pd.concat(all_references).reset_index(drop=True)
+        
+    arxiv_data = load_arXiv_data(args.data_dir)
+    
+    
+    
+    arxiv_dataset = Dataset.from_pandas(arxiv_data)
+    semantic_scholar_dataset = Dataset.from_pandas(semantic_scholar_papers)
+    references_dataset = Dataset.from_pandas(all_references)
+    
+    
+    arxiv_dataset.push_to_hub("Ahren09/SciEvo", config_name="arxiv")
+    semantic_scholar_dataset.push_to_hub("Ahren09/SciEvo", config_name="semantic_scholar")
+    references_dataset.push_to_hub("Ahren09/SciEvo", config_name="references")
+    
     # Extract 'ArXiv' externalIds and assign them to the 'arXivId' column
     semantic_scholar_papers['arXivId'] = semantic_scholar_papers['externalIds'].apply(lambda x: x.get('ArXiv', None))
 
-    arxiv_data = load_arXiv_data(args.data_dir)
     arxiv_data['arXivId'] = arxiv_data['id'].apply(convert_arxiv_url_to_id)
 
 
@@ -102,7 +123,7 @@ if __name__ == "__main__":
     # Set the timezone once
     timezone = pytz.timezone('UTC')
 
-    years = [1990, 2005, 2011] + list(np.arange(2016, 2025))
+    
 
     # years = list(np.arange(2023, 2025))
 

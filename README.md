@@ -3,7 +3,9 @@
 
 **SciEvo** is a large-scale dataset that spans over **30 years of academic literature** from arXiv, designed to support scientometric research and the study of scientific knowledge evolution. By providing a comprehensive collection of **over two million publications**, including detailed metadata and citation graphs, SciEvo enables researchers to analyze long-term trends in academic disciplines, citation practices, and interdisciplinary knowledge exchange.
 
-<a href="https://llava.hliu.cc/"><img src="static/img/Logo_Colorful_Book.jpeg" width="50%"></a> <br>
+<img src="static/img/github.png" width="20px"> <a href="https://github.com/Ahren09/SciEvo.git">GitHub</a>｜<img src="static/img/huggingface.png" width="20px"> <a href="https://huggingface.co/datasets/Ahren09/SciEvo">HuggingFace</a> | <a href="https://www.kaggle.com/datasets/ahren09/scievo">Kaggle</a> | 📄 <a href="https://arxiv.org/abs/2410.09510">Paper</a>
+
+<a href="https://arxiv.org/abs/2410.09510"><img src="static/img/Logo_Colorful_Book.jpeg" width="50%"></a> <br>
 
 ## Citation
 If you use SciEvo in your research, please cite our work:
