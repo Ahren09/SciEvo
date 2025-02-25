@@ -33,15 +33,15 @@ if __name__ == "__main__":
 
     all_references = []
     
-    semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
+    arxiv_data = load_arXiv_data(args.data_dir)
     years = [1990, 2005, 2011] + list(np.arange(2016, 2025))
     for year in years:
         references_one_snapshot = load_semantic_scholar_references_parquet(args.data_dir, start_year=year)
         all_references.append(references_one_snapshot)
         
+    semantic_scholar_papers = load_semantic_scholar_papers(args.data_dir)
     all_references = pd.concat(all_references).reset_index(drop=True)
         
-    arxiv_data = load_arXiv_data(args.data_dir)
     
     
     
