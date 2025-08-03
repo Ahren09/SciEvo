@@ -8,7 +8,7 @@ import pytz
 import seaborn as sns
 from matplotlib import pyplot as plt
 from tqdm import tqdm
-from datasets import DatasetDict, Dataset
+from datasets import load_dataset, Dataset
 
 import itertools
 
@@ -32,6 +32,9 @@ if __name__ == "__main__":
     #                                                                data_dir=args.data_dir)
 
     all_references = []
+
+    data = load_dataset("Ahren09/SciEvo", "references")
+    print(data[0])
     
     arxiv_data = load_arXiv_data(args.data_dir)
     years = [1990, 2005, 2011] + list(np.arange(2016, 2025))
