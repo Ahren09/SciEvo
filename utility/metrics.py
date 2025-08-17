@@ -143,9 +143,9 @@ if __name__ == "__main__":
     counts = np.array([10, 15, 5, 20, 50])  # example counts for some fields
     total = counts.sum()
     proportions = counts / total
-
     print("Simpson's Diversity Index:", simpsons_diversity_index(proportions))
     print("Shannon's Diversity Index:", shannons_diversity_index(proportions))
     print("Gini-Simpson Index:", gini_simpson_index(proportions))
     print("Herfindahl-Hirschman Index:", herfindahl_hirschman_index(proportions))
     print("Normalized Entropy:", normalized_entropy(proportions))
+

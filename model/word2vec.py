@@ -84,10 +84,7 @@ def update_ngrams(n_grams: list, words: set) -> list:
 
 def update_vectorizer(vectorizer: CustomCountVectorizer, N: int = 1) -> CustomCountVectorizer:
     excluded_words = set(ALL_EXCLUDED_WORDS)
-    print(f"Excluded words: {excluded_words}")
     retained_indices = build_retained_indices(vectorizer.vocabulary_d[N], excluded_words)
-
-    print("Update vocabulary")
 
     updated_vocabulary = build_updated_vocabulary(
         list(vectorizer.vocabulary_d[N].items()), retained_indices
@@ -146,11 +143,8 @@ def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N:
 def main():
     KEYPHRASE = "machine learning"
 
-    print("Loading data...", end='\r')
-
     # data = load_arXiv_data(args.data_dir, start_year=1990, start_month=1, end_year=2024, end_month=4)
     data = load_arXiv_data(args.data_dir)
-    print("Done!")
 
     total = 0
     total_entries = 0

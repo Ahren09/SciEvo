@@ -5,7 +5,7 @@ evolution using the SciEvo dataset, which spans over 30 years of arXiv publicati
 """
 
 __version__ = "0.1.0"
-__author__ = "SciEvo Team"
+__author__ = "Anonymous"
 
 from . import config
 from . import data

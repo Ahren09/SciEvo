@@ -124,8 +124,6 @@ if __name__ == "__main__":
 
         filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
-        print(f"Loading model from {filename} ...", end='\r')
-
         model = Word2Vec.load(osp.join(model_path, filename))
 
         year_embed = Embedding(model.wv.vectors, model.wv.index_to_key, normalize=True)
@@ -139,16 +137,12 @@ if __name__ == "__main__":
         # TODO
         # nearest_words_set.update([tup[1] for tup in embed.closest("large", n=10)])
 
-        print("Aligning year:", start.year)
         if start == base_embed_start_timestamp:
             aligned_embed = year_embed
 
 
         else:
             aligned_embed = alignment.smart_procrustes_align(base_embed, year_embed)
-
-
-        print("Writing year:", start.year)
         foutname = osp.join(args.output_dir, f"{start.strftime(const.format_string)}-{end.strftime(const.format_string)}")
         np.save(foutname + "-w.npy", aligned_embed.m)
         write_pickle(aligned_embed.iw, foutname + "-vocab.pkl")
@@ -226,7 +220,6 @@ if __name__ == "__main__":
     # Removing years with NaN values if any exist
     nan_indices = np.any(np.isnan(word1_trajectory), axis=1)
     if np.any(nan_indices):
-        print(f"Warning: Missing '{word}' in some years, skipping these years in the trajectory.")
         word1_trajectory = word1_trajectory[~nan_indices]
 
     if len(word1_trajectory) > 0:
@@ -238,6 +231,4 @@ if __name__ == "__main__":
         plt.legend()
         plt.grid(True)
         plt.show()
-    else:
-        print("No valid data to plot.")
 

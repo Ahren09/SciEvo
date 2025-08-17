@@ -78,7 +78,7 @@ for i, start_year in enumerate(range(1995, 2025)):
     valid_words_in_embedding = set(np.array(embed.iw)[np.sum(embed.m, axis=1) != 0])
 
     time2vocab_size[start_year] = len(valid_words_in_embedding)
-    print(f"Year: {start_year}, Vocab size: {len(valid_words_in_embedding)}")
+    
 
     for word1, word2 in highlighted_word_tuples:
         if word1 not in valid_words_in_embedding or word2 not in valid_words_in_embedding:

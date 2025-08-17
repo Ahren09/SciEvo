@@ -3,7 +3,7 @@ import json
 import os
 
 # 1. Your original dictionary
-raw_dict = json.load(open(os.path.expanduser("~/Workspace/data/NLP/arXiv/title_keywords.json"), "r"))
+raw_dict = json.load(open(os.path.expanduser("~/data/NLP/arXiv/title_keywords.json"), "r"))
 
 # 2. Convert to list of dicts with 'id' and 'keywords'
 data = [
@@ -23,4 +23,4 @@ print(new_subset[0])
 
 
 # 5. Push as a new subset (e.g., 'title_keywords') to your dataset repo
-new_subset.push_to_hub("Ahren09/SciEvo", split="title_keywords")
+new_subset.push_to_hub("anonymous/SciEvo", split="title_keywords")

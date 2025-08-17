@@ -11,12 +11,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="scievo",
     version="0.1.0",
-    author="SciEvo Team",
-    author_email="contact@scievo.org",
+    author="Anonymous",
+    author_email="anonymous@example.com",
     description="A Longitudinal Scientometric Dataset Analysis Package",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Ahren09/SciEvo",
+    url="https://github.com/anonymous/SciEvo",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     classifiers=[

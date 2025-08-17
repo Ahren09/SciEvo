@@ -38,7 +38,7 @@ class Net(torch.nn.Module):
         self.num_nodes = num_nodes
         self.embed_dim = embed_dim
 
-        print(f"#Nodes: {self.num_nodes}")
+
         self.embedding = torch.nn.Embedding(
             num_nodes,
             embedding_dim=embed_dim, sparse=True,
@@ -185,8 +185,6 @@ def evaluate(model, loader, criterion, device):
             y_pred.extend(out.sigmoid().cpu().numpy())
 
     roc_auc = roc_auc_score(y_true, y_pred)
-    num_zero_embeddings = torch.sum(torch.sum(node_embeddings, dim=1) == 0).item()
-    print(f"Number of zero embeddings: {num_zero_embeddings}")
     return total_loss, roc_auc, node_embeddings
 
 
@@ -251,12 +249,9 @@ if __name__ == "__main__":
 
         for epoch in trange(args.epochs, desc=f"Training {year}", position=0, leave=True):
             loss = train(model, train_loader, optimizer, optimizer_sparse, criterion, epoch, args.device)
-            print(f'Epoch: {epoch + 1}, Loss: {loss:.4f}')
 
             if epoch == 0 or (epoch + 1) % args.save_every == 0:
-
                 loss, roc_auc, node_embeddings = evaluate(model, eval_loader, criterion, args.device)
-                print(f'Evaluation Loss: {loss:.4f}, ROC AUC: {roc_auc:.4f}')
 
                 embed_path = osp.join(args.checkpoint_dir, f"{args.feature_name}_{args.tokenization_mode}", const.GCN,
                                       f"{const.GCN}_embeds_{year}.pkl")

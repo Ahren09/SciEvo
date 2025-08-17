@@ -170,9 +170,6 @@ def extract_unigrams_from_abstract(data):
     # Sort the scores in descending order
     sorted_scores = sorted(scores, key=lambda x: x[1], reverse=True)
 
-    # Print top 10 words with highest TF-IDF scores
-    for score, feature in sorted_scores[:10]:
-        print(f"{feature}: {score}")
 
     all_abstract_words = []
 
@@ -204,7 +201,6 @@ def extract_1grams(tokens: List[List[str]]):
     count_unigrams = Counter([token for tokens_one_example in unigrams for token in tokens_one_example])
 
     num_unigrams = sum(1 for count in count_unigrams.values() if count >= args.min_occurrences)
-    print(f"Number of unigrams (unfiltered): {num_unigrams}")
 
     tokens = [[token for token in tokens_one_example if count_unigrams[token] >= args.min_occurrences] for
               tokens_one_example
@@ -215,7 +211,6 @@ def extract_1grams(tokens: List[List[str]]):
     # hard-cap #unigrams at a reasonable number
     unigrams_set = pd.DataFrame(Counter(tokens_flatten).most_common(200000), columns=["keyword", "count"])
     unigrams_set = unigrams_set[unigrams_set['count'] >= args.min_occurrences][:200000].keyword.tolist()
-    print(f"Number of unigrams (filtered): {len(unigrams_set)}")
 
     unigrams, unigrams_filtered = [], []
     for tokens_one_example in tqdm(tokens, desc="Construct 1-grams"):
@@ -316,14 +311,8 @@ if __name__ == "__main__":
 
     semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
 
-    if args.debug:
-        data = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
-
-
-
-    else:
-        data = load_arXiv_data(args.data_dir, start_year=START_YEAR, start_month=START_MONTH, end_year=END_YEAR,
-                               end_month=END_MONTH)
+    data = load_arXiv_data(args.data_dir, start_year=START_YEAR, start_month=START_MONTH, end_year=END_YEAR,
+                           end_month=END_MONTH)
 
     # all_abstract_words = extract_unigrams_from_abstract()
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)

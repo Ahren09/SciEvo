@@ -49,10 +49,8 @@ def get_vectorizer(args, data=None):
             # NOTE: If we use ngram_range=(1, 4), it will be generating n-grams with length 1, 2, 3, 4
             vectorizer = TfidfVectorizer(ngram_range=(1, 4), min_df=5, stop_words='english')
 
-            t0 = time.time()
             # Fit and transform the summaries to get feature matrix
             vectorizer.fit_transform(abstracts)
-            print(f"Time taken to fit and transform the summaries: {time.time() - t0:.2f} seconds")
 
             with open(path, 'wb') as f:
                 pickle.dump(vectorizer, f)
@@ -69,12 +67,7 @@ def get_vectorizer(args, data=None):
 
 
 def main():
-    if args.debug:
-        df = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
-
-    else:
-
-        df = load_arXiv_data(args.data_dir, subset="last_100" if args.debug else None)
+    df = load_arXiv_data(args.data_dir, subset="last_100" if args.debug else None)
 
     # vectorizer = get_vectorizer(args, data=df)
 
@@ -83,7 +76,7 @@ def main():
     vectorizer.load()
 
 
-    print("Done!")
+
 
 
 
@@ -94,8 +87,7 @@ def main():
 if __name__ == "__main__":
     project_setup()
     args = parse_args()
-    if args.debug:
-        print("=" * 10, "RUNNING DEBUG MODE", "=" * 10)
+
 
     stopwords = set(stopwords.words("english"))
     main()

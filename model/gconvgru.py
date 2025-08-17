@@ -180,7 +180,7 @@ class RecurrentGCN(nn.Module):
 def main():
     set_seed(42)
 
-    print("Constructing Dynamic Graph Model ...")
+
 
     format_string = "%Y-%m-%d"
 
@@ -195,7 +195,6 @@ def main():
         idx_snapshot = 373
 
         def save(edges, weights, idx_cache):
-            print(f"Saving cache {idx_cache} (#={len(edges)})...")
             torch.save({
                 "edge_index": edges,
                 "edge_weights": weights,
@@ -234,7 +233,7 @@ def main():
                 filename = (f"outputs/snapshots/graph_{idx_snapshot}_{start.strftime(format_string)}"
                             f"_{end.strftime(format_string)}.npz")
 
-                print(f"Processed {start.strftime(format_string)} to {end.strftime(format_string)}")
+
 
                 graph = sp.load_npz(filename)
                 N = graph.shape[0]
@@ -342,7 +341,6 @@ def main():
                 "do_node_classification"] or \
                     training_args["do_edge_classification"]:
                 emb = model.transform_output(h_0)
-                print((emb != 0).sum(), (emb == 0).sum())
 
             if training_args["do_node_regression"]:
                 pred_node = model.node_output_layer(emb)

@@ -63,10 +63,6 @@ def load_arXiv_data(data_dir: str, start_year: int = None, start_month: int = No
 
 
 
-
-
-
-
     print(f"Loaded {len(data)} arXiv papers in {(time.time() - t0):.3f} secs.")
 
     for column_name in ['title_keywords', 'title_and_abstract_keywords', 'title', 'summary']:
@@ -75,7 +71,7 @@ def load_arXiv_data(data_dir: str, start_year: int = None, start_month: int = No
     # If needed, push to HuggingFace
 
     # hf_dataset = Dataset.from_pandas(data)
-    # hf_dataset.push_to_hub("Ahren09/SciEvo")
+    # hf_dataset.push_to_hub("anonymous/SciEvo")
 
     return data
 

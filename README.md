@@ -1,13 +1,9 @@
 
 # 🎓 SciEvo: A Longitudinal Scientometric Dataset
 
-### <p style="color:rgb(255,0,0);">Best Paper Award at the <a href="https://sites.google.com/servicenow.com/good-data-2025/program?authuser=0"> 1st Workshop on Preparing Good Data for Generative AI: Challenges and Approaches (Good-Data @ AAAI 2025)</a></p>
-
 **SciEvo** is a large-scale dataset that spans over **30 years of academic literature** from arXiv, designed to support scientometric research and the study of scientific knowledge evolution. By providing a comprehensive collection of **over two million publications**, including detailed metadata and citation graphs, SciEvo enables researchers to analyze long-term trends in academic disciplines, citation practices, and interdisciplinary knowledge exchange.
 
-<img src="static/img/github.png" width="20px"> <a href="https://github.com/Ahren09/SciEvo.git">GitHub</a>｜<img src="static/img/huggingface.png" width="20px"> <a href="https://huggingface.co/datasets/Ahren09/SciEvo">HuggingFace</a> | <img src="static/img/kaggle.png" height="20px"> <a href="https://www.kaggle.com/datasets/ahren09/scievo">Kaggle</a> | 📄 <a href="https://arxiv.org/abs/2410.09510">Paper</a>
-
-<a href="https://arxiv.org/abs/2410.09510"><img src="static/img/Logo_Colorful_Book.jpeg" width="50%"></a> <br>
+<img src="static/img/Logo_Colorful_Book.jpeg" width="50%">
 
 ## 📋 Table of Contents
 
@@ -34,7 +30,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/Ahren09/SciEvo.git
+git clone https://github.com/ANONYMOUS/SciEvo.git
 cd SciEvo
 
 # Install dependencies
@@ -55,7 +51,7 @@ pip install scievo
 from datasets import load_dataset
 
 # Load the SciEvo dataset
-dataset = load_dataset("Ahren09/SciEvo")
+dataset = load_dataset("ANONYMOUS/SciEvo")
 
 # Access different configurations
 arxiv_data = dataset["arxiv"]
@@ -265,7 +261,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ```bash
 # Clone the repository
-git clone https://github.com/Ahren09/SciEvo.git
+git clone https://github.com/ANONYMOUS/SciEvo.git
 cd SciEvo
 
 # Install in development mode
@@ -280,10 +276,10 @@ python -m pytest tests/
 If you use SciEvo in your research, please cite our work:
 
 ```bibtex
-@article{jin2024scito2m,
+@article{ANONYMOUS2024scievo,
   title={SciEvo: A 2 Million, 30-Year Cross-disciplinary Dataset for Temporal Scientometric Analysis},
-  author={Jin, Yiqiao and Xiao, Yijia and Wang, Yiyang and Wang, Jindong},
-  journal={arXiv:2410.09510},
+  author={ANONYMOUS},
+  journal={Under Review},
   year={2024}
 }
 ```

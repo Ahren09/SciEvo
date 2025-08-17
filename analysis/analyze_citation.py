@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     all_references = []
 
-    data = load_dataset("Ahren09/SciEvo", "references")
+    data = load_dataset("anonymous/SciEvo", "references")
     print(data[0])
     
     arxiv_data = load_arXiv_data(args.data_dir)
@@ -53,9 +53,9 @@ if __name__ == "__main__":
     references_dataset = Dataset.from_pandas(all_references)
     
     
-    arxiv_dataset.push_to_hub("Ahren09/SciEvo", config_name="arxiv")
-    semantic_scholar_dataset.push_to_hub("Ahren09/SciEvo", config_name="semantic_scholar")
-    references_dataset.push_to_hub("Ahren09/SciEvo", config_name="references")
+    arxiv_dataset.push_to_hub("anonymous/SciEvo", config_name="arxiv")
+    semantic_scholar_dataset.push_to_hub("anonymous/SciEvo", config_name="semantic_scholar")
+    references_dataset.push_to_hub("anonymous/SciEvo", config_name="references")
     
     # Extract 'ArXiv' externalIds and assign them to the 'arXivId' column
     semantic_scholar_papers['arXivId'] = semantic_scholar_papers['externalIds'].apply(lambda x: x.get('ArXiv', None))
