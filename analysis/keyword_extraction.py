@@ -316,14 +316,8 @@ if __name__ == "__main__":
 
     semantic_scholar_data = load_semantic_scholar_data(args.data_dir, START_YEAR, START_MONTH, END_YEAR, END_MONTH)
 
-    if args.debug:
-        data = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
-
-
-
-    else:
-        data = load_arXiv_data(args.data_dir, start_year=START_YEAR, start_month=START_MONTH, end_year=END_YEAR,
-                               end_month=END_MONTH)
+    data = load_arXiv_data(args.data_dir, start_year=START_YEAR, start_month=START_MONTH, end_year=END_YEAR,
+                           end_month=END_MONTH)
 
     # all_abstract_words = extract_unigrams_from_abstract()
     # json.dump(all_abstract_words, open("all_abstract_words.json", "w"), indent=2)

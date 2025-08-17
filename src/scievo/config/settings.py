@@ -53,11 +53,6 @@ def parse_args() -> argparse.Namespace:
         help="Directory containing the processed dataset"
     )
     parser.add_argument(
-        '--debug', 
-        action='store_true',
-        help="Enable debug mode for verbose output"
-    )
-    parser.add_argument(
         '--do_plotly', 
         action='store_true',
         help="Use Plotly for interactive visualizations"

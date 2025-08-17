@@ -20,7 +20,6 @@ from dataset.dynamic_graph_dataset import CustomizedDynamicGraphStaticSignal
 from utility.utils_logging import configure_default_logging
 from utility.utils_misc import set_seed
 
-# TODO: Add more models
 MODEL2CLASS = {
     "GConvGRU": GConvGRU,
 }

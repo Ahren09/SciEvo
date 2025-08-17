@@ -209,8 +209,7 @@ class CustomTfidfVectorizer(BaseVectorizer):
         # Apply TF-IDF transformation
         transformer = TfidfTransformer()
 
-        print("TODO: Fix this")
-        raise NotImplementedError
+        raise NotImplementedError("TF-IDF transformation not yet implemented")
         self.dtm_d = transformer.fit_transform(self.dtm_d)
 
         print(f"Fit and transform takes {time.time() - t0:.2f} secs")

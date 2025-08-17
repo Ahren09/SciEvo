@@ -59,7 +59,6 @@ if __name__ == "__main__":
     background_df['center'] = labels
 
 
-    # TODO: Add the cluster labels to the background_df
 
     nearest_neighbors = set(nearest_neighbors["word"].values)
 

@@ -20,7 +20,6 @@ def parse_args():
     parser.add_argument('--data_dir', type=str,
                         default="data",
                         help="Location to store the processed dataset")
-    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--do_plotly', action='store_true')
     parser.add_argument('--device', type=str, default="cuda")
     parser.add_argument('--do_visual', action='store_true',

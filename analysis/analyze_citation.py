@@ -244,7 +244,6 @@ if __name__ == "__main__":
 
     mAoC_by_month = {}
 
-    print("TODO: rename columns")
 
     # ------------------------------
     # Temporal Diversity

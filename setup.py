@@ -11,9 +11,9 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="scievo",
     version="0.1.0",
-    author="SciEvo Team",
-    author_email="contact@scievo.org",
-    description="A Longitudinal Scientometric Dataset Analysis Package",
+    author="Ahren Jin",
+    author_email="yjin328@gatech.com",
+    description="A Longitudinal Scientometric Dataset Analysis Toolkit",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Ahren09/SciEvo",

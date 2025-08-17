@@ -37,7 +37,6 @@ TrainingLog.md
 # Text files
 *.log
 *.txt
-*.html
 *.pdf
 *.tsv
 *.xlsx
