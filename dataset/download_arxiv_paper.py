@@ -4,7 +4,7 @@ import traceback
 
 import feedparser
 
-from utility.utils_data import load_arXiv_data, get_arXiv_IDs_of_existing_papers
+from utility.utils_data import load_arXiv_data, get_arXiv_IDs_of_existing_papers, process_arxiv_entry
 
 
 def download_arXiv_paper_pdf(paper_id):
@@ -61,7 +61,8 @@ def download_arXiv_metadata_of_month(existing_arxiv_ids, start_year, end_year, s
 
             ids_li = []
 
-            if (month < 4 and year == 2007) or (month <= 11 and year == 2023) or (month > 10 and year >= 2024):
+            # if (month < 4 and year == 2007) or (month <= 11 and year == 2023)
+            if (year <= 2023) or (month <= 6 and year == 2024):
                 print(f"SKIP Year {year} Month {month}")
                 continue
             else:
@@ -76,7 +77,7 @@ def download_arXiv_metadata_of_month(existing_arxiv_ids, start_year, end_year, s
 
             elif year >= 2015:
                 # We just assume that there can be at most 22000 new papers uploaded to arXiv per month
-                ids_li += [f"{prefix}.{x:05d}" for x in range(0, 22000)]
+                ids_li += [f"{prefix}.{x:05d}" for x in range(0, 30000)]
 
             ids_li = sorted(list(set(ids_li) - set(existing_arxiv_ids)))
 
@@ -84,7 +85,8 @@ def download_arXiv_metadata_of_month(existing_arxiv_ids, start_year, end_year, s
 
             path_additional_data = osp.join(args.data_dir, "NLP", "arXiv", f"additional_data_{year}_{month}.json")
 
-            INTERVAL = 100
+            INTERVAL = 10
+            NO_PAPER_FOUND = 0
 
             for idx in trange(0, len(ids_li), INTERVAL, desc=f"Download", position=0, leave=True):
                 ids_string = ','.join([f"{x}" for x in ids_li[idx:idx + INTERVAL]])
@@ -97,7 +99,10 @@ def download_arXiv_metadata_of_month(existing_arxiv_ids, start_year, end_year, s
 
                 try:
                     results = feedparser.parse(url)
-                    entries = results.entries
+
+                    if len(results.entries) == 0:
+                        NO_PAPER_FOUND += 1
+                        continue
 
 
                 except:
@@ -105,7 +110,7 @@ def download_arXiv_metadata_of_month(existing_arxiv_ids, start_year, end_year, s
                     traceback.print_exc()
                     continue
 
-                for result in entries:
+                for result in results.entries:
                     paper = process_arxiv_entry(result)
 
                     additional_data += [paper]
@@ -125,10 +130,10 @@ def add_additional_arXiv_data_to_parquet(df):
     all_additional_data = []
 
     # Manually specify the additional data to be loaded
-    for year in range(2024, 2025):
-        for month in range(4, 5):
+    for year in range(2024, 2026):
+        for month in range(1, 13):
 
-            if (month < 4 and year == 2007) or (month <= 10 and year == 2023) or (month > 10 and year >= 2024):
+            if (month < 4 and year == 2007) or (month <= 10 and year == 2023) or (month <= 6 and year >= 2024):
                 print(f"SKIP Year {year} Month {month}")
                 continue
             else:
@@ -185,10 +190,11 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    data = load_arXiv_data(args.data_dir)
-    existing_arxiv_ids = get_arXiv_IDs_of_existing_papers(data)
+    # data = load_arXiv_data(args.data_dir)
+    # existing_arxiv_ids = get_arXiv_IDs_of_existing_papers(data)
+    existing_arxiv_ids = set()
 
     # Example usage: Download arXiv metadata of a specific month
-    # download_arXiv_metadata_of_month(existing_arxiv_ids, 2024, 2025,4, 5)
+    download_arXiv_metadata_of_month(existing_arxiv_ids, 2024, 2025, 7, 10)
 
     add_additional_arXiv_data_to_parquet(data)
