@@ -52,8 +52,16 @@ class TimeIterator:
         if self.current_year >= self.end_year:
             raise StopIteration
 
-        start = datetime.datetime(self.current_year, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-        end = datetime.datetime(self.current_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+        # Combine all papers before 1995 into one single snapshot
+        if self.current_year <= 1994:
+            start = datetime.datetime(1985, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            self.current_year = 1994
+
+        else:
+            start = datetime.datetime(self.current_year, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+            end = datetime.datetime(self.current_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+
         self.current_year += 1
 
         return (start, end)
@@ -68,6 +76,22 @@ def time_difference_in_days(date1, date2):
     date2 = datetime.strptime(date2, '%Y-%m-%d')
     return (date1 - date2).days
 
+
+import os
+import time
+
+
+def get_file_times(filepath):
+    # Getting the creation time (Windows) and last modified time (Unix)
+    creation_time = os.path.getctime(filepath)
+    modified_time = os.path.getmtime(filepath)
+
+    # Converting time in seconds since the epoch to a readable format
+    readable_creation = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(creation_time))
+    readable_modified = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(modified_time))
+    print(f"File: {filepath} Creation: {readable_creation}, Last Modified: {readable_modified}")
+
+    return readable_creation, readable_modified
 
 if __name__ == "__main__":
     # Example usage:

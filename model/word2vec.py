@@ -1,5 +1,3 @@
-import datetime
-import json
 import os
 import os.path as osp
 import pickle
@@ -11,19 +9,19 @@ from typing import Set
 import nltk
 import numpy as np
 import pandas as pd
-import pytz
 import scipy.sparse as sp
-from gensim.models import Word2Vec, KeyedVectors
+from gensim.models import Word2Vec
 from nltk.corpus import stopwords
 from tqdm import tqdm
+
+sys.path.append(os.getcwd())
+sys.path.append(osp.join(os.getcwd(), "src"))
 
 import const
 from utility.utils_time import TimeIterator
 
-sys.path.append(osp.join(os.getcwd(), "src"))
-
 from model.vectorizer import CustomCountVectorizer
-from utility.utils_data import load_arXiv_data
+from utility.utils_data import load_arXiv_data, load_keywords
 from utility.utils_misc import project_setup
 
 # from utility.wordbank import ALL_EXCLUDED_WORDS
@@ -146,9 +144,12 @@ def update_vectorizer_naive_implementation(vectorizer: CustomCountVectorizer, N:
 
 
 def main():
+    KEYPHRASE = "machine learning"
+
     print("Loading data...", end='\r')
 
-    data = load_arXiv_data(args.data_dir, start_year=1990, start_month=1, end_year=2024, end_month=4)
+    # data = load_arXiv_data(args.data_dir, start_year=1990, start_month=1, end_year=2024, end_month=4)
+    data = load_arXiv_data(args.data_dir)
     print("Done!")
 
     if USE_PREFILTERED_TOKENS:
@@ -158,92 +159,69 @@ def main():
     total = 0
     total_entries = 0
 
-    graphs_li = []
+    if args.tokenization_mode == "unigram":
+        all_keywords = load_keywords(args.data_dir, args.feature_name)
 
-    # TODO
-    iterator = TimeIterator(2021, 2024, start_month=6, end_month=3, snapshot_type='monthly')
+    elif args.tokenization_mode == "llm_extracted_keyword":
+        all_keywords = load_keywords(args.data_dir, args.feature_name)
 
+    iterator = TimeIterator(1985, 2025, start_month=1, end_month=1, snapshot_type='yearly')
     for (start, end) in iterator:
 
+        snapshot_paper_ids = data[(data['published'] >= start) & (data['published'] < end)]['id'].values
         mask = ((data['published'] >= start) & (data['published'] < end)).values
         total += mask.sum()
         total_entries += 1
 
-        if USE_PREFILTERED_TOKENS:
+        if args.tokenization_mode == "unigram":
 
-            tokenized_docs = [all_tokenized_docs[idx] for idx in range(len(data)) if mask[idx]]
-
-
-        else:
             data_snapshot = data[mask]
-
             docs = data_snapshot[args.feature_name].tolist()
             tokenized_docs = process_documents(docs)
 
 
-        # (N, V), N = number of documents, V = number of words
-        # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
+        elif args.tokenization_mode == "llm_extracted_keyword":
+
+            tokenized_docs = all_keywords.loc[all_keywords.index.isin(snapshot_paper_ids)]
+
+            tokenized_docs = tokenized_docs['keywords'].tolist()
+
+        else:
+            raise ValueError(f"Tokenization mode {args.tokenization_mode} not recognized")
+
         print(
             f"Generating embeds from {start.strftime(const.format_string)} to {end.strftime(const.format_string)}: {len(tokenized_docs)} documents, total {total}")
 
-        if DO_WORD2VEC:
+        # (N, V), N = number of documents, V = number of words
+        # vectorizer.dtm_d[N] is a CSR matrix, efficient for row slicing / operations
 
-            try:
-                model = Word2Vec(sentences=tokenized_docs, vector_size=args.embed_dim, window=4, min_count=3,
-                                 sg=1, negative=5, epochs=50, workers=args.num_workers, seed=42)
-            except:
-                model = Word2Vec(sentences=tokenized_docs, size=args.embed_dim, window=4,
-                                 min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
+        try:
+            model = Word2Vec(sentences=tokenized_docs, vector_size=args.embed_dim, window=4, min_count=3,
+                             sg=1, negative=5, epochs=50, workers=args.num_workers, seed=42)
+        except:
+            model = Word2Vec(sentences=tokenized_docs, size=args.embed_dim, window=4,
+                             min_count=3, sg=1, negative=5, iter=50, workers=15, seed=42)
 
-            similar_words = model.wv.most_similar('computer', topn=20)
-            print(f"({start}-{end}) Words most similar to 'computer':")
+        if KEYPHRASE in model.wv.key_to_index:
+
+            similar_words = model.wv.most_similar(KEYPHRASE, topn=20)
+            print(f"({start}-{end}) Words most similar to '{KEYPHRASE}':")
             for word, similarity in similar_words:
                 print(f"\t{word}: {similarity:.4f}")
 
-            if args.save_model:
-                filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
-                print(f"Saving model to {filename}")
-                model.save(osp.join(model_path, filename))
-
-
-            elif DO_GNN:
-                # Archived
-
-                # V = number of words
-
-                # (V, V)
-                co_occurrence_matrix = coincidence_matrix.T.dot(coincidence_matrix)
-
-                # Remove the diagonal entries (i.e., word co-occurrence with itself)
-                co_occurrence_matrix.setdiag(0)
-
-                # Eliminate zero entries to maintain sparse structure
-                co_occurrence_matrix.eliminate_zeros()
-
-                sp.save_npz(osp.join(f'graph_{total_entries}_{start.strftime(const.format_string)}_'
-                                     f'{end.strftime(const.format_string)}.npz'),
-                            co_occurrence_matrix)
+        if args.save_model:
+            # filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
+            filename = f"word2vec_{start.year}.model"
+            print(f"Saving model to {filename}")
+            model.save(osp.join(model_path, filename))
 
 
     print(f"Total entries: {total_entries}")
 
 
-if __name__ == "__main__":
-    DO_WORD2VEC = True
-    DO_GNN = False
-    USE_PREFILTERED_TOKENS = False
-
-    const.format_string = "%Y-%m-%d"
-
-    project_setup()
-    args = parse_args()
-    model_path = osp.join("checkpoints", args.feature_name, "word2vec")
-    os.makedirs(model_path, exist_ok=True)
-    main()
-
-
-    # Load each model and construct a combined vocab
-
+def project_embeds_to_shared_vocab():
+    """
+    """
 
     all_shared_idx_word_li = []
 
@@ -251,39 +229,13 @@ if __name__ == "__main__":
 
     all_embeds = []
 
-    for start_year in range(1994, 2025):
+    iterator = TimeIterator(1985, 2025, start_month=1, end_month=1, snapshot_type='yearly')
+
+    for (start, end) in iterator:
 
         # for start_month in range(1, 13):
-        start_month = 1
 
-        # Treat all papers before 1990 as one single snapshot
-        if start_year == 1994:
-            start = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            end = datetime.datetime(1995, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-        else:
-
-            """
-            # For monthly snapshots
-            if start_month == 12:
-                # Turn to January next year
-                end = datetime.datetime(start_year + 1, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            else:
-
-                # Turn to the next month in the same year
-                end = datetime.datetime(start_year, start_month + 1, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            """
-
-            end = datetime.datetime(start_year + 1, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-            start = datetime.datetime(start_year, start_month, 1, 0, 0, 0, tzinfo=pytz.utc)
-
-
-
+        # Treat all papers between 1985 and 1995 as one single snapshot
 
         filename = f"word2vec_{start.strftime(const.format_string)}-{end.strftime(const.format_string)}.model"
 
@@ -321,8 +273,6 @@ if __name__ == "__main__":
 
                 print(f"{word}\t{shared_idx_word}")
 
-
-
         print(f"Loading model from {filename} Done!")
         all_shared_idx_word_li += [np.array(shared_idx_word_li)]
 
@@ -336,6 +286,7 @@ if __name__ == "__main__":
             "iw": shared_iw
         }, f)
 
+    """
     for i in range(len(all_embeds)):
         print(f"Embedding {i}: {all_embeds[i].shape}")
 
@@ -345,19 +296,21 @@ if __name__ == "__main__":
         memmap_array[:] = 0  # Initialize the array with zeros
 
         memmap_array[all_shared_idx_word_li[i]] = all_embeds[i]
+    """
 
 
+if __name__ == "__main__":
+    DO_WORD2VEC = True
+    DO_GNN = False
 
+    const.format_string = "%Y-%m-%d"
 
+    project_setup()
+    args = parse_args()
+    model_path = osp.join("checkpoints", f"{args.feature_name}_{args.tokenization_mode}", f"word2vec")
+    os.makedirs(model_path, exist_ok=True)
 
+    assert args.tokenization_mode is not None
+    main()
 
-
-
-
-
-
-
-
-
-
-
+    # Load each model and construct a combined vocab

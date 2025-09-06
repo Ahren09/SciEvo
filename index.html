@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="SciEvo: A Longitudinal Scientometric Dataset spanning 30+ years of academic literature from arXiv">
+  <meta name="keywords" content="SciEvo, Scientometrics, Academic Literature, Citation Analysis, Knowledge Evolution">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SciEvo: A Longitudinal Scientometric Dataset</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="icon" href="./static/img/Logo3.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <style>
+    .example-image {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .stats-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .stats-number {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .finding-box {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .highlight-number {
+      color: #667eea;
+      font-weight: bold;
+    }
+
+    .dataset-feature {
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .dataset-feature:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .timeline-item {
+      border-left: 2px solid #667eea;
+      padding-left: 1rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 0;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #667eea;
+    }
+
+    .methodology-step {
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    .methodology-step .icon {
+      font-size: 2rem;
+      color: #667eea;
+      margin-bottom: 1rem;
+    }
+
+    .research-area {
+      background: white;
+      color: #333;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      text-align: center;
+      border: 1px solid #e9ecef;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">
+            🎓 SciEvo: A Longitudinal Scientometric Dataset
+          </h1>
+
+          
+
+          <div class="subtitle is-3">
+            Spanning <span class="highlight-number">30+ Years</span> of Academic Literature Evolution
+          </div>
+          
+          <div class="content">
+            <p class="is-size-5">
+              A comprehensive dataset of <strong>over 2 million academic publications</strong> from arXiv, 
+              designed to support scientometric research and the study of scientific knowledge evolution.
+            </p>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://ahren09.github.io/">Yiqiao Jin</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://yijia-xiao.com/">Yijia Xiao</a><sup>2</sup>,</span>
+            <span class="author-block">
+              <a href="https://www.linkedin.com/in/yiyang-wang-diana/">Yiyang Wang</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://jd92.wang/">Jindong Wang</a><sup>3</sup>,</span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>Georgia Institute of Technology,</span>
+            <span class="author-block"><sup>2</sup>University of California, Los Angeles,</span>
+            <span class="author-block"><sup>3</sup>William & Mary</span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <img src="./static/img/GeorgiaTech.png" width="200" align="absmiddle" />
+            </span>
+            <span class="author-block">
+              <img src="./static/img/UCLA.jpg" width="120" align="absmiddle"/>  
+            </span>
+            <span class="author-block">
+              <img src="./static/img/WilliamMary.jpg" width="90" align="absmiddle"/>  
+            </span>
+          </div>
+
+          <div class="columns is-centered" style="margin-top: 2rem;">
+            <div class="column is-one-third">
+              <div class="stats-card">
+                <div class="stats-number">2M+</div>
+                <div>Academic Papers</div>
+              </div>
+            </div>
+            <div class="column is-one-third">
+              <div class="stats-card">
+                <div class="stats-number">30+</div>
+                <div>Years of Data</div>
+              </div>
+            </div>
+            <div class="column is-one-third">
+              <div class="stats-card">
+                <div class="stats-number">8</div>
+                <div>Subject Areas</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="column has-text-centered" style="margin-top: 2rem;">
+            <div class="publication-links">
+              <!-- Website Link -->
+              <span class="link-block">
+                <a href="https://ahren09.github.io/SciEvo/" class="external-link button is-normal is-rounded is-success">
+                  <span class="icon">
+                      <i class="fas fa-globe"></i>
+                  </span>
+                  <span>Website</span>
+                </a>
+              </span>
+              <!-- Dataset Link -->
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/Ahren09/SciEvo" class="external-link button is-normal is-rounded is-primary">
+                  <span class="icon">
+                      <i class="fas fa-database"></i>
+                  </span>
+                  <span>Dataset</span>
+                </a>
+              </span>
+              <!-- Code Link -->
+              <span class="link-block">
+                <a href="https://github.com/Ahren09/SciEvo"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <!-- Paper Link -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2410.09510" class="external-link button is-normal is-rounded is-info">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Understanding the creation, evolution, and dissemination of scientific knowledge is crucial for bridging diverse subject areas and addressing complex global challenges such as pandemics, climate change, and ethical AI. 
+            Scientometrics, the quantitative and qualitative study of scientific literature, provides valuable insights into these processes. 
+            We introduce <strong>SciEvo</strong>, a longitudinal, continuously updating scientometric dataset with over two million academic publications, along with comprehensive content information and citation graphs, to enable cross-disciplinary analyses of scientific evolutions.
+          </p>
+          <p>
+            Using the dataset, we conduct a longitudinal study spanning over 30 years to explore key questions in scientometrics: the evolution of academic terminology, citation patterns, and interdisciplinary knowledge exchange. 
+            Our findings reveal critical insights, such as disparities in epistemic cultures, knowledge production modes, and citation practices. 
+            For example, rapidly developing, application-driven fields like <strong>Large Language Models exhibit significantly shorter citation age (2.48 years)</strong> compared to traditional theoretical disciplines like <strong>oral history (9.71 years)</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background-color: #f8f9fa;">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Key Findings</h2>
+    
+    <div class="columns">
+      <div class="column">
+        <div class="finding-box">
+          <h4 class="title is-4">📈 Paradigm Shifts in Research</h4>
+          <p>Scientific progress occurs in <strong>leaps rather than gradual accumulation</strong>. Applied fields like LLM research show rapid paradigm shifts, while theoretical fields maintain longer knowledge cycles.</p>
+        </div>
+      </div>
+      <div class="column">
+        <div class="finding-box">
+          <h4 class="title is-4">🏷️ Keyword Evolution</h4>
+          <p>Machine learning terms <strong>surged post-2015</strong>, accounting for over 50% of top-10 keywords by 2020, demonstrating the AI revolution's impact on academic discourse.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column">
+        <div class="finding-box">
+          <h4 class="title is-4">⏳ Citation Lifespan Patterns</h4>
+          <p>Applied fields exhibit <strong>shorter citation cycles</strong>: LLM research (2.48 years) vs. Oral History (9.71 years), indicating varying <strong>recency bias</strong> across disciplines.</p>
+        </div>
+      </div>
+      <div class="column">
+        <div class="finding-box">
+          <h4 class="title is-4">🔗 Disciplinary Citation Behavior</h4>
+          <p>Over <strong>91% of citations occur within the same discipline</strong>, revealing strong field-specific preferences and limited cross-disciplinary knowledge transfer.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3">Dataset Overview</h2>
+          
+          <div class="columns">
+            <div class="column is-half">
+              <div class="dataset-feature">
+                <h4 class="title is-4">📊 Comprehensive Metadata</h4>
+                <ul>
+                  <li><strong>Titles & Abstracts:</strong> Full text content for analysis</li>
+                  <li><strong>Keywords:</strong> LLM-extracted and traditional keywords</li>
+                  <li><strong>Subject Categories:</strong> arXiv taxonomy classification</li>
+                  <li><strong>Temporal Information:</strong> Publication and update dates</li>
+                </ul>
+              </div>
+            </div>
+            <div class="column is-half">
+              <div class="dataset-feature">
+                <h4 class="title is-4">🕸️ Citation Networks</h4>
+                <ul>
+                  <li><strong>Reference Graphs:</strong> Comprehensive citation relationships</li>
+                  <li><strong>Semantic Scholar Integration:</strong> Enhanced metadata</li>
+                  <li><strong>Temporal Analysis:</strong> Citation age and patterns</li>
+                  <li><strong>Cross-disciplinary Links:</strong> Inter-field connections</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column is-half">
+              <div class="dataset-feature">
+                <h4 class="title is-4">🎯 Ready-to-Use</h4>
+                <ul>
+                  <li><strong>HuggingFace:</strong> Direct dataset loading</li>
+                  <li><strong>Multiple Formats:</strong> Parquet, CSV, JSON support</li>
+                  <li><strong>Preprocessing:</strong> Clean, structured data</li>
+                  <li><strong>Documentation:</strong> Comprehensive usage guides</li>
+                </ul>
+              </div>
+            </div>
+            <div class="column is-half">
+              <div class="dataset-feature">
+                <h4 class="title is-4">🔧 Analysis Tools</h4>
+                <ul>
+                  <li><strong>Temporal Analysis:</strong> Trend visualization tools</li>
+                  <li><strong>Citation Metrics:</strong> Age, diversity, patterns</li>
+                  <li><strong>Keyword Evolution:</strong> Terminology tracking</li>
+                  <li><strong>Graph Analysis:</strong> Network visualization</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background-color: #f8f9fa;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3 has-text-centered">Research Applications</h2>
+          
+          <div class="columns">
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">🔬 Terminology Evolution</h4>
+                <p>Track the rise and decline of key research terms over time, identifying paradigm shifts and emerging fields.</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">📈 Citation Dynamics</h4>
+                <p>Understand citation lifespan patterns and field-specific differences in knowledge consumption.</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">🌐 Interdisciplinary Patterns</h4>
+                <p>Analyze how different disciplines interact and influence each other's research directions.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="columns">
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">🔄 Paradigm Shifts</h4>
+                <p>Identify major shifts in research focus and methodological approaches across scientific fields.</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">⚖️ Comparative Field Analysis</h4>
+                <p>Explore differences in knowledge production and citation behavior across academic disciplines.</p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="research-area">
+                <h4 class="title is-4">📊 Policy Research</h4>
+                <p>Support evidence-based policy making through comprehensive analysis of research trends and impact.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3 has-text-centered">Visual Insights</h2>
+          
+          <div class="columns">
+            <div class="column is-half">
+              <h4 class="title is-4 has-text-centered">Citation Graph Networks</h4>
+              <img src="./static/img/citation_graph.jpeg" class="example-image" alt="Citation graphs of papers related to LLMs and COVID"/>
+              <p class="has-text-centered" style="margin-top: 1rem;">
+                <em>Citation networks reveal knowledge flow patterns between related research areas</em>
+              </p>
+            </div>
+            <div class="column is-half">
+              <h4 class="title is-4 has-text-centered">Cross-Disciplinary Citations</h4>
+              <img src="./static/img/cross_disciplinary_citation.jpg" class="example-image" alt="Distribution of citations showing intra vs cross-disciplinary patterns"/>
+              <p class="has-text-centered" style="margin-top: 1rem;">
+                <em>91% of citations occur within the same discipline, revealing field-specific citation preferences</em>
+              </p>
+            </div>
+          </div>
+
+          <div class="columns">
+            <div class="column is-half">
+              <h4 class="title is-4 has-text-centered">Age of Citations (AoC)</h4>
+              <img src="./static/img/AoC.jpeg" class="example-image" alt="Age of Citations across different arXiv categories"/>
+              <p class="has-text-centered" style="margin-top: 1rem;">
+                <em>Computer Science and EESS show preference for recent citations, while Physics and Math rely more on historical research</em>
+              </p>
+            </div>
+            <div class="column is-half">
+              <h4 class="title is-4 has-text-centered">Keyword Evolution</h4>
+              <img src="./static/img/keyword_trajectories.png" class="example-image" alt="Evolution of AI and COVID-19 keyword trajectories"/>
+              <p class="has-text-centered" style="margin-top: 1rem;">
+                <em>Keyword trajectories show how research terms evolve and co-occur over time</em>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background-color: #f8f9fa;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3 has-text-centered">Getting Started</h2>
+          
+          <div class="methodology-step">
+            <div class="icon">
+              <i class="fas fa-download"></i>
+            </div>
+            <h4 class="title is-4">1. Access the Dataset</h4>
+            <p>Load the SciEvo dataset directly from HuggingFace with a simple Python command:</p>
+            <pre><code>from datasets import load_dataset
+dataset = load_dataset("Ahren09SciEvo")</code></pre>
+          </div>
+
+          <div class="methodology-step">
+            <div class="icon">
+              <i class="fas fa-code"></i>
+            </div>
+            <h4 class="title is-4">2. Use Analysis Tools</h4>
+            <p>Leverage our comprehensive analysis toolkit for scientometric research:</p>
+            <pre><code>python analysis/analyze_citation.py --feature_name title
+python analysis/keyword_extraction_llm.py --year 2020</code></pre>
+          </div>
+
+          <div class="methodology-step">
+            <div class="icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <h4 class="title is-4">3. Generate Insights</h4>
+            <p>Create visualizations and conduct longitudinal analyses of scientific evolution:</p>
+            <pre><code>python visualization/plot_keyword_traj.py
+python visualization/plot_citation_diversity.py</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3 has-text-centered">Timeline of Scientific Evolution</h2>
+          
+          <div class="timeline-item">
+            <h4 class="title is-4">1990s: Theoretical Foundations</h4>
+            <p>Focus on foundational areas like <strong>Quantum Field Theory</strong>, <strong>Particle Physics</strong>, and <strong>Computational Complexity</strong>. Research emphasized theoretical understanding and mathematical rigor.</p>
+          </div>
+
+          <div class="timeline-item">
+            <h4 class="title is-4">2000s: Computational Methods</h4>
+            <p>Shift towards data-driven methodologies with the rise of <strong>optimization</strong>, <strong>graph theory</strong>, and early <strong>machine learning</strong> approaches.</p>
+          </div>
+
+          <div class="timeline-item">
+            <h4 class="title is-4">2010s: Deep Learning Revolution</h4>
+            <p>Emergence of <strong>Deep Learning</strong>, <strong>Neural Networks</strong>, and <strong>Reinforcement Learning</strong>, constituting over 50% of top keywords by decade's end.</p>
+          </div>
+
+          <div class="timeline-item">
+            <h4 class="title is-4">2020s: AI and Societal Impact</h4>
+            <p>Focus on <strong>Large Language Models</strong>, <strong>Transformers</strong>, and societal challenges like <strong>COVID-19</strong>, <strong>Fairness</strong>, and <strong>Ethical AI</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="dataset" style="background-color: #f8f9fa;">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column">
+        <div class="content">
+          <h2 class="title is-3 has-text-centered">Dataset Access</h2>
+          
+          <div class="columns">
+            <div class="column has-text-centered">
+              <div class="box">
+                <h4 class="title is-4">🤗 HuggingFace</h4>
+                <p>Direct access to the complete dataset</p>
+                <a href="#" class="button is-primary">Access Dataset</a>
+              </div>
+            </div>
+            <div class="column has-text-centered">
+              <div class="box">
+                <h4 class="title is-4">📊 Kaggle</h4>
+                <p>Compete and analyze with the community</p>
+                <a href="#" class="button is-info">View on Kaggle</a>
+              </div>
+            </div>
+            <div class="column has-text-centered">
+              <div class="box">
+                <h4 class="title is-4">💻 GitHub</h4>
+                <p>Complete source code and documentation</p>
+                <a href="https://github.com/Ahren09SciEvo" class="button is-dark">View Code</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title has-text-centered">Citation</h2>
+    <div class="box">
+      <pre><code>@article{jin2024scievo,
+  title={SciEvo: A 2 Million, 30-Year Cross-disciplinary Dataset for Temporal Scientometric Analysis},
+  author={Jin, Yiqiao and Xiao, Yijia and Wang, Yiyang and Wang, Jindong},
+  journal={arXiv:2410.09510},
+  year={2024}
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="Acknowledgement">
+  <div class="container is-max-desktop content">
+    <h2 class="title has-text-centered">License</h2>
+    <div class="has-text-centered">
+      <p>
+        The data, code and analysis tools are intended and licensed for research purposes.
+      </p>
+      <p style="margin-top: 1rem;">
+        This website is licensed under the <a rel="license"
+                                            href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+        Commons Attribution-ShareAlike 4.0 International License</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer" style="background-color: #363636; color: white;">
+  <div class="content has-text-centered">
+    <p style="color: white;">
+      <strong style="color: white;">SciEvo</strong> - Longitudinal Scientometric Dataset for Academic Literature Evolution
+    </p>
+    <p style="color: #b5b5b5;">
+      Supporting 30+ years of scientific research analysis and discovery
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

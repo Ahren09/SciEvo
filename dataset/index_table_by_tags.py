@@ -5,9 +5,9 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 import const
-from utility.utils_data import load_arXiv_data
 
 sys.path.insert(0, os.path.abspath('..'))
+from utility.utils_data import load_arXiv_data
 from arguments import parse_args
 from utility.utils_misc import project_setup
 

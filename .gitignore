@@ -4,7 +4,9 @@
 /src/.idea/
 gradio_cached_examples
 checkpoints/
-notebooks
+keys.py
+demo*
+data
 
 # Output and data files
 ./Data
@@ -35,7 +37,6 @@ TrainingLog.md
 # Text files
 *.log
 *.txt
-*.html
 *.pdf
 *.tsv
 *.xlsx
@@ -47,8 +48,7 @@ TrainingLog.md
 # Mac OS X files
 .DS_Store
 
-# Image files
-*.png
+
 
 # Machine learning and data analysis files
 *.pt
@@ -69,3 +69,4 @@ pycache/
 *.dtd
 *.ndjson
 *.model
+*.parquet

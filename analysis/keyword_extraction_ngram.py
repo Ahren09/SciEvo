@@ -69,12 +69,7 @@ def get_vectorizer(args, data=None):
 
 
 def main():
-    if args.debug:
-        df = pd.read_json("/Users/ahren/Workspace/Course/CS7450/CS7450_Homeworks/HW4/data/arXiv_2023_3-4.json")
-
-    else:
-
-        df = load_arXiv_data(args.data_dir, subset="last_100" if args.debug else None)
+    df = load_arXiv_data(args.data_dir)
 
     # vectorizer = get_vectorizer(args, data=df)
 
@@ -94,8 +89,6 @@ def main():
 if __name__ == "__main__":
     project_setup()
     args = parse_args()
-    if args.debug:
-        print("=" * 10, "RUNNING DEBUG MODE", "=" * 10)
 
     stopwords = set(stopwords.words("english"))
     main()
